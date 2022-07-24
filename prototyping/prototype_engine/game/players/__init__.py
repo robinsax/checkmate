@@ -1,2 +1,2 @@
-from .human_cli import HumanCLI
+from .human import Human
 from .heuristic_random import HeuristicRandom

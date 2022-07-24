@@ -8,10 +8,10 @@ if TYPE_CHECKING:
 class IPieceType:
 
     def names(self):
-        raise NotImplementedError('IPieceType.names()')
+        raise NotImplementedError()
 
     def moves(self, board: 'Board', piece: 'Piece', position: Position) -> Position:
-        raise NotImplementedError('IPieceType.moves(board)')
+        raise NotImplementedError()
 
 class Piece:
     id: str

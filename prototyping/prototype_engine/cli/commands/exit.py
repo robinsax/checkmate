@@ -2,6 +2,10 @@ import sys
 
 from typing import List
 
+from ...server import IServer
+
+from ..exception import CLIInputError
+
 from .common import BaseCLICommand
 
 class ExitCommand(BaseCLICommand):
@@ -10,4 +14,7 @@ class ExitCommand(BaseCLICommand):
         return ('exit', 'bye')
 
     def command(self) -> str:
+        if self.cli.get_state('server', IServer):
+            raise CLIInputError('actively hosting')
+
         sys.exit(1)

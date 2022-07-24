@@ -15,7 +15,7 @@ class PositionCLIArgument(BaseCLIArgument[Position]):
             raise CLIInputError('%s: expected position'%value)
 
         position = Position(match.group(2), match.group(1))
-        if not self.game.board.is_valid(position):
+        if not self.cli.expect_state('game', IGame).board.is_valid(position):
             raise CLIInputError('%s: invalid position'%value)
 
         return position

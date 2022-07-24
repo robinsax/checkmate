@@ -1,8 +1,9 @@
-from ...model import Move
-
 from ..bases import IPlayer, IGame
 
-class HumanCLI(IPlayer):
+class Human(IPlayer):
+
+    def name(self) -> str:
+        return 'human'
 
     def take_turn(self, game: IGame) -> None:
         return

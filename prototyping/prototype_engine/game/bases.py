@@ -5,31 +5,34 @@ from ..model import Color, Board, Move, Piece, Position
 
 class IPlayer(ISerializable):
 
+    def name(self) -> str:
+        raise NotImplementedError()
+
     def take_turn(self, game: 'IGame') -> None:
-        raise NotImplementedError('IPlayer.take_turn(game)')
+        raise NotImplementedError()
 
 class IGame(ISerializable):
     
     @property
     def active_player(self) -> IPlayer:
-        raise NotImplementedError('IGame.active_player')
+        raise NotImplementedError()
 
     @property
     def board(self) -> Board:
-        raise NotImplementedError('IGame.board')
+        raise NotImplementedError()
 
     @property
     def turn(self) -> Color:
-        raise NotImplementedError('IGame.turn')
+        raise NotImplementedError()
 
     def set_players(self, players: Tuple[IPlayer, IPlayer]) -> None:
-        raise NotImplementedError('IGame.set_players(players)')
+        raise NotImplementedError()
 
     def as_move(self, piece: Piece, position: Position) -> Move:
-        raise NotImplementedError('IGame.as_move(piece, position)')
+        raise NotImplementedError()
 
     def make_move(self, move: Move) -> None:
-        raise NotImplementedError('IGame.make_move(move)')
+        raise NotImplementedError()
 
     def start(self) -> None:
-        raise NotImplementedError('IGame.start()')
+        raise NotImplementedError()

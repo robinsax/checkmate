@@ -1,0 +1,38 @@
+@import './common.scss';
+
+html, body {
+    margin: 0px;
+}
+
+* {
+    margin: 0px;
+    box-sizing: border-box;
+}
+
+input, select, button {
+    font-family: 'Courier New', Courier, monospace;
+    border: 1px solid;
+    outline: none;
+    border-radius: 0px;
+    @include off-color(border-color);
+    @include on-color-hard(background-color);
+    @include off-color(color);
+}
+
+.root {
+    font-family: 'Courier New', Courier, monospace;
+    min-width: 100vw;
+    min-height: 100vh;
+    @include on-color(background-color);
+    @include off-color(color);
+
+    .root-settings {
+        position: fixed;
+        top: $space;
+        right: $space;
+
+        select {
+            margin-left: $space;
+        }
+    }
+}

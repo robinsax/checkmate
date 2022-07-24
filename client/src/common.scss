@@ -1,0 +1,66 @@
+$space: 4px;
+
+$dark: rgb(31, 31, 31);
+$dark-hard: black;
+$dark-soft: rgb(92, 92, 92);
+$light: rgb(240, 240, 240);
+$light-hard: white;
+$light-soft: rgb(206, 206, 206);
+
+@mixin dark-theme() {
+    [data-theme="dark"] & {
+        @content
+    }
+}
+
+@mixin light-theme() {
+    [data-theme="light"] & {
+        @content
+    }
+}
+
+@mixin color-rules($rule, $dark-opt, $light-opt) {
+    @include dark-theme() {
+        #{$rule}: $dark-opt;
+    }
+    @include light-theme() {
+        #{$rule}: $light-opt;
+    }
+}
+
+@mixin on-color($rule) {
+    @include color-rules($rule, $dark, $light);
+}
+
+@mixin on-color-hard($rule) {
+    @include color-rules($rule, $dark-hard, $light-hard);
+}
+
+@mixin on-color-soft($rule) {
+    @include color-rules($rule, $dark-soft, $light-soft);
+}
+
+@mixin off-color($rule) {
+    @include color-rules($rule, $light, $dark);
+}
+
+@mixin off-color-hard($rule) {
+    @include color-rules($rule, $light-hard, $dark-hard);
+}
+
+@mixin off-color-soft($rule) {
+    @include color-rules($rule, $light-soft, $dark-soft);
+}
+
+@mixin title-text {
+    font-size: 20pt;
+    font-weight: medium;
+}
+
+@mixin window-center {
+    position: absolute;
+    top: 50vh;
+    transform: translateY(-50%);
+    text-align: center;
+    width: 100%;
+}

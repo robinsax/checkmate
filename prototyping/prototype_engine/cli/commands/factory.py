@@ -2,14 +2,12 @@ from typing import List
 
 from ..bases import ICLICommand
 
-from .new_game import NewGameCommand
-from .load_game import LoadGameCommand
-from .save_game import SaveGameCommand
+from .game import NewGameCommand, LoadGameCommand, SaveGameCommand
 from .exit import ExitCommand
-from .moves import MovesCommand
+from .moves import MovesCommand, MoveCommand
 from .show_board import ShowBoardCommand
-from .move import MoveCommand
 from .debug_piece import DebugPieceCommand
+from .hosting import HostGameCommand, DehostGameCommand
 
 def create_commands() -> List[ICLICommand]:
     return (
@@ -20,5 +18,7 @@ def create_commands() -> List[ICLICommand]:
         MovesCommand(),
         MoveCommand(),
         ShowBoardCommand(),
-        DebugPieceCommand()
+        DebugPieceCommand(),
+        HostGameCommand(),
+        DehostGameCommand()
     )

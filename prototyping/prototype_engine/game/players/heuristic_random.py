@@ -6,6 +6,9 @@ from ..bases import IPlayer, IGame
 
 class HeuristicRandom(IPlayer):
 
+    def name(self) -> str:
+        return 'heur_rand'
+
     def take_turn(self, game: IGame) -> None:
         moves = game.board.legal_moves(game.turn)
 

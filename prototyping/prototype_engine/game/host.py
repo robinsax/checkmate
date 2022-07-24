@@ -1,6 +1,4 @@
-import time
-
-from typing import Tuple
+from typing import Tuple, List
 
 from ..serialization import SerializedInput
 from ..model import Color, Board, Move, Position, Piece
@@ -11,7 +9,7 @@ from .exceptions import GameStateError
 class HostGame(IGame):
     _board: Board
     _turn: Color
-    _players: IPlayer
+    _players: List[IPlayer]
 
     @classmethod
     def new(cls, players: Tuple[IPlayer, IPlayer]):
@@ -94,7 +92,11 @@ class HostGame(IGame):
     def serialize(self) -> dict:
         return {
             'board': self.board,
-            'turn': self.turn
+            'turn': self.turn,
+            'players': {
+                'white': self._players[0].name(),
+                'black': self._players[1].name()
+            }
         }
 
     def deserialize(self, data: SerializedInput) -> None:

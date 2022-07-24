@@ -1,5 +1,7 @@
 from typing import List
 
+from ...game import IGame
+
 from .common import BaseCLICommand
 
 class ShowBoardCommand(BaseCLICommand):
@@ -8,4 +10,4 @@ class ShowBoardCommand(BaseCLICommand):
         return ('show', 'board')
 
     def command(self) -> str:
-        return str(self.game)
+        return str(self.cli.expect_state('game', IGame))

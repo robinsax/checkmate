@@ -1,5 +1,6 @@
 from typing import Tuple
 
+from ...game import IGame
 from ...model import Piece, Position
 
 from ..exception import CLIInputError
@@ -14,7 +15,7 @@ class PieceCLIArgument(BaseCLIArgument[Tuple[Position, Piece]]):
         pos_parser.set_cli(self.cli)
 
         position = pos_parser.parse(value)
-        piece = self.game.board[position]
+        piece = self.cli.expect_state('game', IGame).board[position]
 
         if not piece:
             raise CLIInputError('%s: no piece there'%value)

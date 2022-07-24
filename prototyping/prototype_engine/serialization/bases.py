@@ -6,17 +6,17 @@ if TYPE_CHECKING:
 class ISerializable:
 
     def serialize(self) -> Union[str, int, dict, list]:
-        raise NotImplementedError('ISerializable.serialize()')
+        raise NotImplementedError()
 
     def deserialize(self, data: 'SerializedInput') -> None:
-        raise NotImplementedError('ISerializeable.deserialize()')
+        raise NotImplementedError()
 
 TDeserializedType = TypeVar('TDeserializedType', bound=ISerializable)
 
 class ISerializer:
 
     def serialize(self, obj: ISerializable) -> bytes:
-        raise NotImplementedError('Serializer.serialize(obj)')
+        raise NotImplementedError()
 
     def deserialize(self, data: bytes, dest: Type[TDeserializedType]) -> TDeserializedType:
-        raise NotImplementedError('Serializer.deserialize(data)')
+        raise NotImplementedError()

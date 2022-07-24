@@ -1,9 +1,12 @@
 from typing import List, Tuple
 
 from ...model import Position, Piece, Move
+from ...game import GameStateError, IGame
+from ...game.players import Human
 
 from ..bases import ICLIArgument
-from ..arguments import PieceCLIArgument, OptionalCLIArgument
+from ..arguments import PieceCLIArgument, OptionalCLIArgument, PositionCLIArgument
+from ..exception import CLIInputError
 
 from .common import BaseCLICommand
 
@@ -23,9 +26,9 @@ class MovesCommand(BaseCLICommand):
         return '→' if file_dir > 0 else '←'
 
     def _show_piece_moves_board(
-        self, moves: List[Move], piece_info: Tuple[Position, Piece]
+        self, game: IGame, moves: List[Move], piece_info: Tuple[Position, Piece]
     ) -> Tuple[str, List[Move]]:
-        board = self.game.board
+        board = game.board
 
         view_matrix = board.view_matrix(with_legend=True)
 
@@ -54,9 +57,30 @@ class MovesCommand(BaseCLICommand):
         )
 
     def command(self, piece_info: Tuple[Position, Piece] = None) -> str:
-        moves = self.game.board.legal_moves(self.game.turn)
+        game = self.cli.expect_state('game', IGame)
+        moves = game.board.legal_moves(game.turn)
         board = str()
         if piece_info:
-            board, moves = self._show_piece_moves_board(moves, piece_info)
+            board, moves = self._show_piece_moves_board(game, moves, piece_info)
 
         return '\n'.join((board, *(str(move) for move in moves)))
+
+class MoveCommand(BaseCLICommand):
+
+    def verbs(self) -> List[str]:
+        return ('move',)
+
+    def arguments(self) -> List[ICLIArgument]:
+        return (PieceCLIArgument(), PositionCLIArgument())
+
+    def command(self, piece_info: Tuple[Position, Piece], position: Position) -> str:
+        game = self.cli.expect_state('game', IGame)
+        if not isinstance(game.active_player, Human):
+            raise CLIInputError('not your turn')
+
+        try:
+            game.make_move(game.as_move(piece_info[1], position))
+        except GameStateError as err:
+            raise CLIInputError('nope, %s'%str(err))
+
+        return str(game)

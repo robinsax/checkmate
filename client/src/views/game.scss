@@ -1,0 +1,111 @@
+@import '../common.scss';
+
+$cell-size: $space * 16;
+
+.game-view {
+    @include window-center();
+    
+    .loading {
+        @include title-text();
+    }
+    
+    .game-main-area {
+        display: inline-block;
+        vertical-align: top;
+        height: $cell-size * 8;
+        width: $cell-size * 8;
+
+        .board-view {
+            position: relative;
+
+            .rank {
+                height: $cell-size;
+                width: $cell-size * 8;
+
+                .rank-label {
+                    position: absolute;
+                    left: -$space * 4;
+                    height: $cell-size;
+                    line-height: $cell-size;
+                    font-size: $space * 3;
+                }
+
+                .cell {
+                    @include off-color-soft(color);
+                    position: relative;
+                    display: inline-block;
+                    vertical-align: top;
+                    height: $cell-size;
+                    width: $cell-size;
+                    font-size: $cell-size - $space * 4;
+                    line-height: $cell-size;
+                    user-select: none;
+                    border: 1px solid transparent;
+
+                    &.move-target {
+                        @include on-color-soft(border-color);
+                    }
+
+                    .cell-hit-target {
+                        position: absolute;
+                        top: 0px;
+                        left: 0px;
+                        width: 100%;
+                        height: 100%;
+                        z-index: 2;
+                    }
+                }
+            }
+
+            .file-labels {
+                .file-label {
+                    padding-top: $space * 2;
+                    display: inline-block;
+                    vertical-align: top;
+                    width: $cell-size;
+                    font-size: $space * 3;
+                }
+            }
+
+            .piece {
+                @include off-color(color);
+                position: absolute;
+                height: $cell-size;
+                width: $cell-size;
+                font-size: $cell-size - $space * 4;
+                line-height: $cell-size;
+                z-index: 1;
+                user-select: none;
+                cursor: pointer;
+
+                &.dragging {
+                    transform: translate(-50%, -50%);
+                }
+            }
+        }
+    }
+
+    .game-side-area {
+        display: inline-block;
+        vertical-align: top;
+        height: $cell-size * 8;
+        width: $space * 80;
+        padding: $space * 2;
+        padding-right: 0px;
+        text-align: left;
+        overflow-x: hidden;
+
+        .move-history-view {
+            font-size: $space * 4;
+            max-height: $space * 60;
+            overflow-y: scroll;
+            width: calc(100% + #{$space * 5});
+            padding-right: $space * 5;
+        }
+
+        .active-turn {
+            font-size: $space * 3;
+            margin-bottom: $space * 2;
+        }
+    }
+}

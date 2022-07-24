@@ -1,20 +1,18 @@
-import sys
-
-from typing import List, Mapping
-
-from ..game import IGame
+from typing import List, Mapping, Any, TypeVar, Type
 
 from .exception import CLIInputError
 from .bases import ICLICommand
 
+TStateType = TypeVar('TStateType')
+
 class CLI:
-    game: IGame
+    _state: dict
     _command_lookup: Mapping[str, ICLICommand]
 
     def __init__(self, commands: List[ICLICommand]) -> None:
         super().__init__()
         
-        self._game = None
+        self._state = dict()
 
         self._init_commands(commands)
 
@@ -28,14 +26,26 @@ class CLI:
             for verb in verbs:
                 self._command_lookup[verb] = command
 
-    @property
-    def game(self) -> IGame:
-        return self._game
+    def get_state(self, key: str, type: Type[TStateType]) -> TStateType:
+        value = self._state.get(key)
+        if value and not isinstance(value, type):
+            raise CLIInputError('invalid %s'%key)
 
-    def set_game(self, game: IGame) -> None:
-        self._game = game
-        if self._game:
-            self._game.start()
+        return value
+
+    def expect_state(self, key: str, type: Type[TStateType]) -> TStateType:
+        if key not in self._state:
+            raise CLIInputError('no %s'%key)
+        
+        return self.get_state(key, type)
+
+    def set_state(self, key: str, value: Any) -> None:
+        if value is None:
+            if key in self._state:
+                del self._state[key]
+            return
+
+        self._state[key] = value
 
     def _read_input(self):
         return input('> ').split()
@@ -68,5 +78,4 @@ class CLI:
             except CLIInputError as err:
                 print(str(err))
             except KeyboardInterrupt:
-                print('bye')
-                sys.exit(0)
+                print('"exit" to exit')

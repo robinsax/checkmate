@@ -10,21 +10,21 @@ TArgumentValueType = TypeVar('TArgumentValueType')
 class ICLIArgument(Generic[TArgumentValueType]):
 
     def set_cli(self, cli: 'CLI') -> None:
-        raise NotImplementedError('ICLIArgument.set_cli(cli)')
+        raise NotImplementedError()
 
     def parse(self, value: str) -> TArgumentValueType:
-        raise NotImplementedError('ICLIArgument.parse(value)')
+        raise NotImplementedError()
 
 class ICLICommand:
 
     def set_cli(self, cli: 'CLI') -> None:
-        raise NotImplementedError('ICLICommand.set_cli(cli)')
+        raise NotImplementedError()
 
     def verbs(self) -> List[str]:
-        raise NotImplementedError('ICLICommand.verbs()')
+        raise NotImplementedError()
 
     def arguments(self) -> List[ICLIArgument]:
-        raise NotImplementedError('ICLICommand.arguments(game)')
+        raise NotImplementedError()
 
     def command(self, *args: List[Any]) -> str:
-        raise NotImplementedError('ICLICommand.command(game, *args)')
+        raise NotImplementedError()

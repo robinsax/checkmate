@@ -1,0 +1,18 @@
+@import '../common.scss';
+
+.connect-view {
+    @include window-center();
+
+    .title {
+        @include title-text();
+        margin-bottom: $space * 2;
+    }
+
+    .fields {
+        margin-bottom: $space * 2;
+
+        input:first-child {
+            margin-right: $space;
+        }
+    }
+}
