@@ -7,7 +7,9 @@ interface RemotePrototypeStateMove {
     taken?: RemotePrototypeStatePiece;
     from: string;
     to: string;
-    other?: RemotePrototypeStateMove;
+    castle_other?: RemotePrototypeStateMove;
+    promotion_to?: RemotePrototypeStatePiece;
+    promotion_from?: RemotePrototypeStatePiece;
 }
 
 interface RemotePrototypeState {
@@ -70,7 +72,11 @@ export class RemotePrototypeHostDriver implements Game {
                 converted.taken = [internal.taken.name, internal.taken.id];
             }
             if (internal.castle_other) {
-                converted.other = convertMove(internal.castle_other);
+                converted.castle_other = convertMove(internal.castle_other);
+            }
+            if (internal.promotion_to && internal.promotion_from) {
+                converted.promotion_to = [internal.promotion_to.name, internal.promotion_to.id];
+                converted.promotion_from = [internal.promotion_from.name, internal.promotion_from.id];
             }
 
             return converted;
@@ -101,7 +107,9 @@ export class RemotePrototypeHostDriver implements Game {
             taken: input.taken ? parsePiece(input.taken) : null,
             from: input.from,
             to: input.to,
-            castle_other: input.other ? parseMove(input.other) : null
+            castle_other: input.castle_other ? parseMove(input.castle_other) : null,
+            promotion_to: input.promotion_to ? parsePiece(input.promotion_to) : null,
+            promotion_from: input.promotion_from ? parsePiece(input.promotion_from) : null
         });
        
         const { state: { legal_moves, board, turn, result }, players } = input;

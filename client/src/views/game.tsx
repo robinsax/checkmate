@@ -29,6 +29,12 @@ interface MovesViewProps {
     history: Move[];
 }
 
+interface MoveChoiceProps {
+    choices: Move[];
+    makeChoice: (choice: Move) => void;
+    cancelChoice: () => void;
+}
+
 interface ActiveDrag {
     piece: Piece;
     dragX: number;
@@ -196,24 +202,57 @@ const MovesView: Component<MovesViewProps> = props => {
     );
 };
 
+const MoveChoiceView: Component<MoveChoiceProps> = props => {
+    return (
+        <div class="move-choice-view">
+            <div class="move-choice-view-bg"/>
+            <div class="move-choice-hint">pick one</div>
+            <div
+                class="move-choice-cancel"
+                onClick={ props.cancelChoice }
+            >
+                x
+            </div>
+            <For each={ props.choices }>{ item => (
+                <div
+                    class="move-choice-item"
+                    onClick={ () => props.makeChoice(item) }
+                >
+                    { item.promotion_to?.name }
+                </div>
+            ) }</For>
+        </div>
+    );
+};
+
 export const GameView: Component<GameViewProps> = props => {
     const [gameState, setGameState] = createSignal<GameState | null>(null);
+    const [moveChoice, setMoveChoice] = createSignal<Move[] | null>(null);
 
     let takeTurn: (move: Move) => Promise<void> = async () => {};
 
     const takeTurnFromDrop = (piece: Piece, position: string) => {
         const moves = (gameState() as GameState).legal_moves;
 
-        let foundMove: Move | null = null;
+        const foundMoves: Move[] = [];
         for (const move of moves) {
             if (move.to == position && move.piece.id == piece.id) {
-                foundMove = move;
-                break;
+                foundMoves.push(move);
             }
         }
-        if (!foundMove) return;
+        if (!foundMoves.length) return;
 
-        takeTurn(foundMove);
+        if (foundMoves.length == 1) {
+            takeTurn(foundMoves[0]);
+            return;
+        }
+
+        setMoveChoice(foundMoves);
+    };
+
+    const takeTurnFromChoice = (move: Move) => {
+        setMoveChoice(null);
+        takeTurn(move);
     };
 
     onMount(async () => {
@@ -253,6 +292,13 @@ export const GameView: Component<GameViewProps> = props => {
                 :
                 <div class="game-area">
                     <div class="game-main-area">
+                        { (choices => choices && (
+                            <MoveChoiceView
+                                choices={ choices }
+                                makeChoice={ takeTurnFromChoice }
+                                cancelChoice={ () => setMoveChoice(null) }
+                            />
+                        ))(moveChoice()) }
                         <BoardView
                             board={ state.board }
                             allMoves={ state.legal_moves }

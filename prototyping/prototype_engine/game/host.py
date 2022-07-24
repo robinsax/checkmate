@@ -100,9 +100,14 @@ class HostGame(IGame):
 
         moves = self._board.legal_moves(self._turn)
         if not len(moves):
+            if self._board.is_in_check(self._turn):
+                return GameResult(
+                    winner=Color.inverse(self._turn),
+                    condition=ResultCondition.checkmate
+                )
             return GameResult(
-                winner=Color.inverse(self._turn),
-                condition=ResultCondition.checkmate
+                winner=None,
+                condition=ResultCondition.stalemate
             )
 
         return None

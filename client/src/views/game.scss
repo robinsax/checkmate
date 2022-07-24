@@ -15,6 +15,53 @@ $cell-size: $space * 16;
         height: $cell-size * 8;
         width: $cell-size * 8;
 
+        .move-choice-view {
+            position: absolute;
+            display: inline-block;
+            vertical-align: top;
+            top: 50%;
+            transform: translateY(-50%);
+            height: $cell-size * 1.5;
+            width: $cell-size * 6;
+            text-align: center;
+            z-index: 5;
+            padding-top: $space * 3;
+
+            .move-choice-hint {
+                position: relative;
+                z-index: 1;
+            }
+
+            .move-choice-cancel {
+                position: absolute;
+                z-index: 1;
+                top: $space;
+                right: $space * 2;
+                cursor: pointer;
+            }
+
+            .move-choice-view-bg {
+                position: absolute;
+                top: 0px;
+                left: 0px;
+                width: 100%;
+                height: 100%;
+                opacity: 0.8;
+                @include on-color-hard(background-color);
+            }
+
+            .move-choice-item {
+                position: relative;
+                display: inline-block;
+                vertical-align: top;
+                font-size: $cell-size - $space * 4;
+                line-height: $cell-size;
+                cursor: pointer;
+                z-index: 1;
+                margin: 0px $space * 2;
+            }
+        }
+
         .board-view {
             position: relative;
 

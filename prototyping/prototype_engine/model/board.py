@@ -43,7 +43,7 @@ class Board(ISerializable):
                 return True
         return False
 
-    def _is_in_check(self, color: Color):
+    def is_in_check(self, color: Color):
         opponent_moves = self.legal_moves(
             Color.inverse(color), _no_check_lookahead = True
         )
@@ -56,7 +56,7 @@ class Board(ISerializable):
     def _move_creates_check(self, color: Color, move: Move):
         self.apply_move(move)
 
-        check = self._is_in_check(color)
+        check = self.is_in_check(color)
 
         self._undo_last_move()
 
@@ -65,7 +65,7 @@ class Board(ISerializable):
     def _move_escapes_check(self, color: Color, move: Move):
         self.apply_move(move)
 
-        escaped = not self._is_in_check(color)
+        escaped = not self.is_in_check(color)
 
         self._undo_last_move()
 
@@ -74,7 +74,7 @@ class Board(ISerializable):
     def legal_moves(self, color: Color, _no_check_lookahead: bool = False) -> List[Move]:
         moves = list()
 
-        in_check = not _no_check_lookahead and self._is_in_check(color)
+        in_check = not _no_check_lookahead and self.is_in_check(color)
 
         for rank in self.ranks:
             for file in self.files:
@@ -93,11 +93,13 @@ class Board(ISerializable):
         return moves
 
     def apply_move(self, move: Move, _no_history: bool = False) -> None:
-        if move.other:
-            self.apply_move(move.other, True)
+        if move.castle_other:
+            self.apply_move(move.castle_other, True)
 
         del self.state[str(move.from_position)]
-        self.state[str(move.to_position)] = move.piece
+        self.state[str(move.to_position)] = (
+            move.promotion_to if move.promotion_to else move.piece
+        )
 
         if not _no_history:
             self.move_history.append(move)
@@ -105,15 +107,17 @@ class Board(ISerializable):
     def _undo_last_move(self, _move: Move = None) -> Move:
         move = _move if _move else self.move_history.pop()
         
-        if move.other:
-            self._undo_last_move(move.other)
+        if move.castle_other:
+            self._undo_last_move(move.castle_other)
 
         if move.taken:
             self.state[str(move.to_position)] = move.taken
         else:
             del self.state[str(move.to_position)]
 
-        self.state[str(move.from_position)] = move.piece
+        self.state[str(move.from_position)] = (
+            move.promotion_from if move.promotion_from else move.piece
+        )
 
     def serialize(self) -> dict:
         from .piece_types import AbstractPiece

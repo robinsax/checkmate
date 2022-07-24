@@ -57,7 +57,9 @@ class PawnType(IPieceType):
         return ('♙', '♟')
 
     def moves(self, board: 'Board', piece: 'Piece', position: Position) -> List[Position]:
-        moves = list()
+        from .piece import Piece
+
+        moves: List[Position] = list()
 
         def forward(pos: Position) -> Position:
             if piece.color is Color.white:
@@ -84,7 +86,28 @@ class PawnType(IPieceType):
         check_attack(forward(position).right())
         check_attack(forward(position).left())
 
-        return moves
+        full_moves = list()
+        for move in moves:
+            is_last_rank = move.rank in (board.ranks[-1], board.ranks[0])
+            if not is_last_rank:
+                full_moves.append(move)
+                continue
+
+            options = (QueenType(), RookType(), KnightType(), BishopType())
+            name_index = self.names().index(piece.name)
+            for option in options:
+                promo_piece = Piece(option, (Color.white, Color.black)[name_index])
+                promo_piece.id = piece.id
+
+                full_moves.append(Move(
+                    piece=piece,
+                    from_position=position,
+                    to_position=move,
+                    promotion_from=piece,
+                    promotion_to=promo_piece
+                ))
+
+        return full_moves
 
 class BishopType(IPieceType):
 
@@ -186,7 +209,7 @@ class KingType(IPieceType):
                 piece=piece,
                 from_position=position,
                 to_position=direction(direction(position)),
-                other=Move(
+                castle_other=Move(
                     piece=rook_info[0],
                     from_position=rook_info[1],
                     to_position=direction(position)

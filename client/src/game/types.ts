@@ -18,6 +18,8 @@ export interface Move {
     from: string;
     to: string;
     castle_other: Move | null;
+    promotion_to: Piece | null;
+    promotion_from: Piece | null;
 }
 
 export interface GameResult {
