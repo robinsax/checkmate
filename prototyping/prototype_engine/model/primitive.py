@@ -10,6 +10,10 @@ class Color(Enum):
     white = 'white'
     black = 'black'
 
+    @classmethod
+    def inverse(cls, color: 'Color') -> 'Color':
+        return Color.white if color is Color.black else Color.black
+
 class Position(ISerializable):
     rank: str
     file: str
@@ -49,10 +53,12 @@ class Move(ISerializable):
     taken: 'Piece'
     from_position: Position
     to_position: Position
+    other: 'Move'
 
     def __init__(
         self, piece: 'Piece' = None, taken: 'Piece' = None,
-        from_position: 'Position' = None, to_position: 'Position' = None
+        from_position: 'Position' = None, to_position: 'Position' = None,
+        other: 'Move' = None
     ) -> None:
         super().__init__()
 
@@ -60,6 +66,7 @@ class Move(ISerializable):
         self.taken = taken
         self.from_position = from_position
         self.to_position = to_position
+        self.other = other
 
     def serialize(self) -> dict:
         from .piece_types import AbstractPiece
@@ -71,6 +78,8 @@ class Move(ISerializable):
         }
         if self.taken:
             dict_repr['taken'] = AbstractPiece(self.taken)
+        if self.other:
+            dict_repr['other'] = self.other
 
         return dict_repr
 
@@ -84,9 +93,15 @@ class Move(ISerializable):
 
         self.from_position = data.dict_lookup('from').as_instance(Position)
         self.to_position = data.dict_lookup('to').as_instance(Position)
+        
+        other_repr = data.dict_lookup('other', allow_empty=True)
+        if other_repr:
+            self.other = other_repr.as_instance(Move)
 
     def __str__(self) -> str:
         return '%s %s -> %s%s'%(
             str(self.piece), str(self.from_position), str(self.to_position),
-            ' takes %s'%str(self.taken) if self.taken else str()
+            ' takes %s'%str(self.taken) if self.taken else (
+                ' castles' if self.other else ''
+            )
         )

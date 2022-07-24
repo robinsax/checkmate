@@ -1,9 +1,9 @@
-from typing import TYPE_CHECKING, List, Callable
+from typing import TYPE_CHECKING, List, Callable, Tuple
 
 from ..serialization import ISerializable, SerializedInput
 
 from .piece import IPieceType
-from .primitive import Position, Color
+from .primitive import Position, Color, Move
 
 if TYPE_CHECKING:
     from .board import Board
@@ -152,7 +152,7 @@ class KingType(IPieceType):
         return ('♔', '♚')
  
     def moves(self, board: 'Board', piece: 'Piece', position: Position) -> List[Position]:
-        return valid_positions(board, piece, (
+        moves = valid_positions(board, piece, (
             position.up(),
             position.up().left(),
             position.up().right(),
@@ -162,6 +162,46 @@ class KingType(IPieceType):
             position.down().left(),
             position.down().right()
         ))
+
+        def find_castle(direction: Callable[[Position], Position]) -> Move:
+            def find_rook_info() -> Tuple['Piece', Position]:
+                search = direction(position)
+                while board.is_valid(search):
+                    check_piece = board[search]
+                    if not check_piece:
+                        search = direction(search)
+                        continue
+
+                    if check_piece.name in ('♖', '♜') and not board.has_piece_moved(check_piece):
+                        return (check_piece, search)
+
+                    return None
+                return None
+            
+            rook_info = find_rook_info()
+            if not rook_info:
+                return None
+            
+            return Move(
+                piece=piece,
+                from_position=position,
+                to_position=direction(direction(position)),
+                other=Move(
+                    piece=rook_info[0],
+                    from_position=rook_info[1],
+                    to_position=direction(position)
+                )
+            )
+
+        if not board.has_piece_moved(piece):
+            left_castle = find_castle(lambda pos: pos.left())
+            if left_castle:
+                moves.append(left_castle)
+            right_castle = find_castle(lambda pos: pos.right())
+            if right_castle:
+                moves.append(right_castle)
+
+        return moves
 
 _piece_types: List[IPieceType] = (
     PawnType(), BishopType(), RookType(), KnightType(), QueenType(), KingType()

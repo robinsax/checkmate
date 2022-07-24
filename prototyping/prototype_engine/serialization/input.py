@@ -44,8 +44,9 @@ class SerializedInput:
         if not isinstance(self._inner, dict):
             self._raise_expected('an object')
 
-        if allow_empty and not key in self._inner:
+        if allow_empty and not key in self._inner or self._inner[key] is None:
             return None
+
         return self._child('.%s'%key, self._inner.get(key))
 
     def list_lookup(self, index: int, allow_empty: bool = False, _safe: bool = False) -> 'SerializedInput':
@@ -82,6 +83,12 @@ class SerializedInput:
     def as_instance(self, Dest: Type[ISerializable]) -> Any:
         if self._mode is _Mode.unwrap_list:
             return self._do_list_unwrap(lambda k: self.list_lookup(k, _safe=True).as_instance(Dest))
+
+        if Enum in Dest.__bases__:
+            try:
+                return getattr(Dest, self.as_str())
+            except AttributeError:
+                raise DeserializeError('invalid enum member: %s'%self._inner)
 
         attempt = Dest()
         attempt.deserialize(self)

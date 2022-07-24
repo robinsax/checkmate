@@ -1,7 +1,7 @@
 from falcon import Request, Response
 
 from ..model import Move
-from ..game import IGame
+from ..game import IGame, GameStateError
 from ..serialization import ISerializer, JSONSerializer
 
 class GameResource:
@@ -22,6 +22,11 @@ class GameResource:
     def on_post(self, req: Request, resp: Response) -> None:
         move = self._serializer.deserialize(req.bounded_stream.read(), Move)
 
-        self._game.make_move(move)
+        try:
+            self._game.make_move(move)
+        except GameStateError as err:
+            resp.content_type = 'application/json'
+            resp.data = {'error': str(err)}
+            return
 
         self.on_get(req, resp)

@@ -2,7 +2,7 @@ import './game.scss';
 
 import { Component, createSignal, For, onMount } from 'solid-js';
 
-import { Board, Game, Piece, Move, Color } from '../game';
+import { Board, Game, Piece, Move, Color, GameState } from '../game';
 import { RemotePrototypeHostDriver } from '../game/drivers';
 import { navigate, QueryMap } from '../router';
 
@@ -188,7 +188,8 @@ const MovesView: Component<MovesViewProps> = props => {
             <For each={ [...props.history].reverse() }>{ move => (
                 <div class="move">
                     { move.piece.name } { move.from } → { move.to }
-                    { move.taken ? ('(takes ' + move.taken.name + ')') : '' }
+                    { move.taken ? (' (takes ' + move.taken.name + ')') : '' }
+                    { move.castle_other ? ( ' (castles)') : '' }
                 </div>
             ) }</For>
         </div>
@@ -196,14 +197,12 @@ const MovesView: Component<MovesViewProps> = props => {
 };
 
 export const GameView: Component<GameViewProps> = props => {
-    const [board, setBoard] = createSignal<Board | null>(null);
-    const [legalMoves, setLegalMoves] = createSignal<Move[]>([]);
-    const [activePlayer, setActivePlayer] = createSignal<[Color, string]>(['white', 'noone']);
+    const [gameState, setGameState] = createSignal<GameState | null>(null);
 
     let takeTurn: (move: Move) => Promise<void> = async () => {};
 
     const takeTurnFromDrop = (piece: Piece, position: string) => {
-        const moves = legalMoves();
+        const moves = (gameState() as GameState).legal_moves;
 
         let foundMove: Move | null = null;
         for (const move of moves) {
@@ -235,9 +234,7 @@ export const GameView: Component<GameViewProps> = props => {
             return;
         }
 
-        setBoard(game.board());
-        setLegalMoves(game.legalMoves());
-        setActivePlayer(game.activePlayer());
+        setGameState(game.state());
 
         takeTurn = async (move: Move) => {
             if (!game) return;
@@ -245,32 +242,39 @@ export const GameView: Component<GameViewProps> = props => {
             const applied = await game.takeTurn(move);
             if (!applied) return;
 
-            setBoard(game.board());
-            setLegalMoves(game.legalMoves());
-            setActivePlayer(game.activePlayer());
+            setGameState(game.state());
         };
     });
 
     return (
         <div class="game-view">
-            { ((board: Board | null) => (!board ?
-                <div class="loading">Loading...</div>
+            { ((state: GameState | null) => (!state ?
+                <div class="loading">loading...</div>
                 :
                 <div class="game-area">
                     <div class="game-main-area">
                         <BoardView
-                            board={ board } allMoves={ legalMoves() }
+                            board={ state.board }
+                            allMoves={ state.legal_moves }
                             makeMove={ takeTurnFromDrop }
                         />
                     </div>
                     <div class="game-side-area">
-                        <div class="active-turn">
-                            { JSON.stringify(activePlayer()) } to move
+                        <div class="active-state">
+                            { state.result ?
+                                <span>
+                                    game over, { JSON.stringify(state.result) }
+                                </span>
+                                :
+                                <span> 
+                                    { JSON.stringify(state.active_player) } to move
+                                </span>
+                            }
                         </div>
-                        <MovesView history={ board.history }/>
+                        <MovesView history={ state.board.history }/>
                     </div>
                 </div>
-            ))(board()) }
+            ))(gameState()) }
         </div>
     );
 };

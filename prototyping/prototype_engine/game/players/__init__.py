@@ -1,2 +1,1 @@
-from .human import Human
-from .heuristic_random import HeuristicRandom
+from .factory import AbstractPlayer, player_for_name

@@ -3,7 +3,6 @@ from typing import List, Tuple, Mapping, Union
 from ..serialization import ISerializable, SerializedInput
 
 from .piece import Piece
-from .piece_types import AbstractPiece
 from .primitive import Color, Move, Position
 
 class Board(ISerializable):
@@ -44,23 +43,77 @@ class Board(ISerializable):
                 return True
         return False
 
-    def legal_moves(self, color: Color) -> List[Move]:
+    def _is_in_check(self, color: Color):
+        opponent_moves = self.legal_moves(
+            Color.inverse(color), _no_check_lookahead = True
+        )
+
+        for move in opponent_moves:
+            if move.taken and move.taken.name in ('♔', '♚'):
+                return True
+        return False
+
+    def _move_creates_check(self, color: Color, move: Move):
+        self.apply_move(move)
+
+        check = self._is_in_check(color)
+
+        self._undo_last_move()
+
+        return check
+
+    def _move_escapes_check(self, color: Color, move: Move):
+        self.apply_move(move)
+
+        escaped = not self._is_in_check(color)
+
+        self._undo_last_move()
+
+        return escaped
+
+    def legal_moves(self, color: Color, _no_check_lookahead: bool = False) -> List[Move]:
         moves = list()
+
+        in_check = not _no_check_lookahead and self._is_in_check(color)
 
         for rank in self.ranks:
             for file in self.files:
                 position = Position(rank, file)
                 piece = self[position]
                 if piece and piece.color is color:
-                    moves.extend(piece.moves(self, position))
+                    piece_moves = piece.moves(self, position)
+                    for move in piece_moves:
+                        is_legal = _no_check_lookahead or (
+                            (not in_check or self._move_escapes_check(color, move)) and
+                            (not self._move_creates_check(color, move))
+                        )
+                        if is_legal:
+                            moves.append(move)
 
         return moves
 
-    def apply_move(self, move: Move) -> None:
+    def apply_move(self, move: Move, _no_history: bool = False) -> None:
+        if move.other:
+            self.apply_move(move.other, True)
+
         del self.state[str(move.from_position)]
         self.state[str(move.to_position)] = move.piece
 
-        self.move_history.append(move)
+        if not _no_history:
+            self.move_history.append(move)
+
+    def _undo_last_move(self, _move: Move = None) -> Move:
+        move = _move if _move else self.move_history.pop()
+        
+        if move.other:
+            self._undo_last_move(move.other)
+
+        if move.taken:
+            self.state[str(move.to_position)] = move.taken
+        else:
+            del self.state[str(move.to_position)]
+
+        self.state[str(move.from_position)] = move.piece
 
     def serialize(self) -> dict:
         from .piece_types import AbstractPiece

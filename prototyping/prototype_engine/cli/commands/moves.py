@@ -2,7 +2,6 @@ from typing import List, Tuple
 
 from ...model import Position, Piece, Move
 from ...game import GameStateError, IGame
-from ...game.players import Human
 
 from ..bases import ICLIArgument
 from ..arguments import PieceCLIArgument, OptionalCLIArgument, PositionCLIArgument
@@ -75,7 +74,7 @@ class MoveCommand(BaseCLICommand):
 
     def command(self, piece_info: Tuple[Position, Piece], position: Position) -> str:
         game = self.cli.expect_state('game', IGame)
-        if not isinstance(game.active_player, Human):
+        if not game.active_player.is_human():
             raise CLIInputError('not your turn')
 
         try:

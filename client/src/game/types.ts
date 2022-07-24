@@ -17,11 +17,22 @@ export interface Move {
     taken: Piece | null;
     from: string;
     to: string;
+    castle_other: Move | null;
+}
+
+export interface GameResult {
+    winner: Color;
+    condition: string;
+}
+
+export interface GameState {
+    board: Board;
+    active_player: [Color, string];
+    legal_moves: Move[];
+    result: any;
 }
 
 export interface Game {
-    legalMoves(): Move[];
-    activePlayer(): [Color, string];
-    board(): Board;
+    state(): GameState;
     takeTurn(move: Move): Promise<boolean>;
 }

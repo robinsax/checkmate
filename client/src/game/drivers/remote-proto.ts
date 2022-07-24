@@ -1,4 +1,4 @@
-import { Board, Color, Piece, Game, Move } from '../types';
+import { Board, Color, Piece, Game, Move, GameState } from '../types';
 
 type RemotePrototypeStatePiece = [string, string];
 
@@ -7,17 +7,24 @@ interface RemotePrototypeStateMove {
     taken?: RemotePrototypeStatePiece;
     from: string;
     to: string;
+    other?: RemotePrototypeStateMove;
 }
 
 interface RemotePrototypeState {
-    legal_moves: RemotePrototypeStateMove[];
-    board: {
-        ranks: string;
-        files: string;
-        pieces: [string, RemotePrototypeStatePiece][];
-        history: RemotePrototypeStateMove[];
+    state: {
+        legal_moves: RemotePrototypeStateMove[];
+        turn: Color;
+        board: {
+            ranks: string;
+            files: string;
+            pieces: [string, RemotePrototypeStatePiece][];
+            history: RemotePrototypeStateMove[];
+        };
+        result: {
+            winner: Color;
+            condition: string;
+        };
     };
-    turn: Color;
     players: {
         white: string;
         black: string;
@@ -26,9 +33,7 @@ interface RemotePrototypeState {
 
 export class RemotePrototypeHostDriver implements Game {
     private url: string;
-    private currentLegalMoves: Move[] | null;
-    private currentBoard: Board | null;
-    private currentTurn: Color | null;
+    private currentState: GameState | null;
     private players: { [color: string]: string } | null;
 
     static async connect(host: string, port: number): Promise<Game> {
@@ -40,9 +45,7 @@ export class RemotePrototypeHostDriver implements Game {
     private constructor(url: string) {
         this.url = url;
 
-        this.currentLegalMoves = null;
-        this.currentBoard = null;
-        this.currentTurn = null;
+        this.currentState = null;
         this.players = null;
     }
 
@@ -52,33 +55,30 @@ export class RemotePrototypeHostDriver implements Game {
         this.hydrateStateFrom(await resp.json() as RemotePrototypeState);
     }
 
-    legalMoves(): Move[] {
-        return this.currentLegalMoves as Move[];
-    }
-
-    board(): Board {
-        return this.currentBoard as Board;
-    }
-
-    activePlayer(): [Color, string] {
-        if (!this.currentTurn || !this.players) return ['white', 'noone'];
-
-        return [this.currentTurn, this.players[this.currentTurn]];
+    state(): GameState {
+        return this.currentState as GameState;
     }
 
     async takeTurn(move: Move): Promise<boolean> {
-        const convertedMove: RemotePrototypeStateMove = {
-            piece: [move.piece.name, move.piece.id],
-            from: move.from,
-            to: move.to
+        const convertMove = (internal: Move): RemotePrototypeStateMove => {
+            const converted: RemotePrototypeStateMove = {
+                piece: [internal.piece.name, internal.piece.id],
+                from: internal.from,
+                to: internal.to
+            };
+            if (internal.taken) {
+                converted.taken = [internal.taken.name, internal.taken.id];
+            }
+            if (internal.castle_other) {
+                converted.other = convertMove(internal.castle_other);
+            }
+
+            return converted;
         };
-        if (move.taken) {
-            convertedMove.taken = [move.taken.name, move.taken.id];
-        }
 
         const resp = await fetch(this.url + '/game', {
             method: 'POST',
-            body: JSON.stringify(convertedMove),
+            body: JSON.stringify(convertMove(move)),
             headers: {
                 'Content-Type': 'application/json'
             }
@@ -90,7 +90,7 @@ export class RemotePrototypeHostDriver implements Game {
         return true;
     }
 
-    private hydrateStateFrom(state: RemotePrototypeState) {
+    private hydrateStateFrom(input: RemotePrototypeState) {
         const parsePiece = (input: RemotePrototypeStatePiece): Piece => ({
             id: input[1],
             name: input[0]
@@ -100,17 +100,23 @@ export class RemotePrototypeHostDriver implements Game {
             piece: parsePiece(input.piece),
             taken: input.taken ? parsePiece(input.taken) : null,
             from: input.from,
-            to: input.to
+            to: input.to,
+            castle_other: input.other ? parseMove(input.other) : null
         });
-        
-        this.currentBoard = {
-            ranks: state.board.ranks.split(''),
-            files: state.board.files.split(''),
-            pieces: state.board.pieces.map(input => [input[0], parsePiece(input[1])]),
-            history: state.board.history.map(parseMove)
+       
+        const { state: { legal_moves, board, turn, result }, players } = input;
+
+        this.players = players;
+        this.currentState = {
+            board: {
+                ranks: board.ranks.split(''),
+                files: board.files.split(''),
+                pieces: board.pieces.map(info => [info[0], parsePiece(info[1])]),
+                history: board.history.map(parseMove)
+            },
+            active_player: [turn, players[turn]],
+            legal_moves: legal_moves.map(parseMove),
+            result
         };
-        this.currentTurn = state.turn;
-        this.currentLegalMoves = state.legal_moves.map(parseMove);
-        this.players = state.players;
     }
 }

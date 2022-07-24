@@ -1,7 +1,6 @@
 from typing import List
 
-from ...game import IGame, HostGame
-from ...game.players import HeuristicRandom, Human
+from ...game import IGame, HostGame, player_for_name
 from ...serialization import JSONSerializer
 
 from ..arguments import FilePathCLIArgument
@@ -9,13 +8,15 @@ from ..bases import ICLIArgument
 
 from .common import BaseCLICommand
 
+_default_players = (player_for_name('heur_rand'), player_for_name('human'))
+
 class NewGameCommand(BaseCLICommand):
 
     def verbs(self) -> List[str]:
         return ('new',)
 
     def command(self) -> str:
-        game = HostGame.new((HeuristicRandom(), Human()))
+        game = HostGame.new(_default_players)
         game.start()
         self.cli.set_state('game', game)
 
@@ -32,10 +33,15 @@ class LoadGameCommand(BaseCLICommand):
     def command(self, file_path: str) -> str:
         serializer = JSONSerializer()
 
+        game: IGame = None
         with open(file_path, 'rb') as src_file:
-            self.cli.set_state('game', serializer.deserialize(src_file.read(), HostGame))
+            game = serializer.deserialize(src_file.read(), HostGame)
 
-        return str(self.cli.game)
+        game.set_players(_default_players)
+        game.start()
+        self.cli.set_state('game', game)
+
+        return str(game)
 
 class SaveGameCommand(BaseCLICommand):
 

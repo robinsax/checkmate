@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Union
 
 from .primitive import Color, Position, Move
 
@@ -10,7 +10,9 @@ class IPieceType:
     def names(self):
         raise NotImplementedError()
 
-    def moves(self, board: 'Board', piece: 'Piece', position: Position) -> Position:
+    def moves(
+        self, board: 'Board', piece: 'Piece', position: Position
+    ) -> List[Union[Position, Move]]:
         raise NotImplementedError()
 
 class Piece:
@@ -38,7 +40,10 @@ class Piece:
 
         moves = list()
         for new_position in move_positions:
-            moves.append(Move(self, board[new_position], position, new_position))
+            if isinstance(new_position, Move):
+                moves.append(new_position)
+            else:
+                moves.append(Move(self, board[new_position], position, new_position))
 
         return moves
 
