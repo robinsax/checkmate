@@ -4,10 +4,9 @@ from falcon import App, CORSMiddleware
 from threading import Thread, Event
 from werkzeug.serving import BaseWSGIServer, make_server
 
-from ..game import IGame
-
 from .bases import IServer
-from .resources import GameResource
+from .resources import GameResource, PlayersResource
+from .parameters import ServerParameters
 
 class ServerStop(BaseException):
     pass
@@ -34,10 +33,12 @@ class SimpleServer(IServer):
     def stop(self) -> None:
         self._server._stoppable_signal.set()
 
-def create_server(game: IGame, port: int) -> IServer:
+
+def create_server(params: ServerParameters) -> IServer:
     app = App(middleware=CORSMiddleware(allow_origins='*', allow_credentials='*'))
-    app.add_route('/game', GameResource(game))
+    app.add_route('/game', GameResource(params))
+    app.add_route('/players', PlayersResource())
 
     logging.getLogger('werkzeug').setLevel(logging.ERROR)
 
-    return SimpleServer(StoppableServer('localhost', port, app))
+    return SimpleServer(StoppableServer('localhost', params.port, app))

@@ -1,40 +1,42 @@
 export type Color = 'white' | 'black';
 
-export interface Board {
-    ranks: string[];
-    files: string[];
-    pieces: [string, Piece][];
-    history: Move[];
-}
+export type PieceType = 'pawn' | 'knight' | 'rook' | 'bishop' | 'queen' | 'king';
+
+export const RANKS = '12345678'.split('');
+export const FILES = 'abcdefgh'.split('');
 
 export interface Piece {
-    id: string;
-    name: string;
+    type: PieceType;
+    color: Color;
 }
 
 export interface Move {
     piece: Piece;
-    taken: Piece | null;
     from: string;
     to: string;
-    castle_other: Move | null;
-    promotion_to: Piece | null;
-    promotion_from: Piece | null;
+    taken: Piece | null;
+    promotion: PieceType | null;
+    castle: {
+        from: string,
+        to: string
+    } | null;
 }
 
-export interface GameResult {
+export interface Result {
     winner: Color;
     condition: string;
 }
 
-export interface GameState {
-    board: Board;
-    active_player: [Color, string];
-    legal_moves: Move[];
-    result: any;
+export interface State {
+    board: [string, Piece][],
+    active: string;
+    moves: Move[];
+    history: Move[];
+    result: Result | null;
 }
 
 export interface Game {
-    state(): GameState;
+    state(): State;
     takeTurn(move: Move): Promise<boolean>;
+    restart(): Promise<boolean>;
 }

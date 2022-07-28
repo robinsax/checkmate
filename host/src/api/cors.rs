@@ -1,8 +1,8 @@
-use rocket::{ async_trait };
-use rocket::fairing::{ Fairing, Kind, Info };
-use rocket::http::{ Header };
-use rocket::request::{ Request };
-use rocket::response::{ Response };
+use rocket::async_trait;
+use rocket::fairing::{Fairing, Kind, Info};
+use rocket::http::Header;
+use rocket::request::Request;
+use rocket::response::Response;
 
 pub struct CorsFairing;
 

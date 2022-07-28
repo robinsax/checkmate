@@ -1,19 +1,32 @@
+from typing import List
+
 from ...serialization import ISerializable, SerializedInput, DeserializeError
 
 from ..bases import IPlayer
 
 from .human import Human
-from .heuristic_random import HeuristicRandom
+from .heur_random import HeuristicRandom
+from .eng_stockfish import StockfishPlayer
 
 _player_types = (
-    Human(), HeuristicRandom()
+    Human(), HeuristicRandom(), StockfishPlayer()
 )
+
+class InvalidPlayerError(BaseException):
+    pass
 
 def player_for_name(name: str) -> IPlayer:
     for check in _player_types:
         if check.name() == name:
             return check
-    return None
+    
+    raise InvalidPlayerError(name)
+
+def all_available_player_names() -> List[str]:
+    names = list()
+    for type in _player_types:
+        names.append(type.name())    
+    return names
 
 class AbstractPlayer(ISerializable):
     player: IPlayer

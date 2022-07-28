@@ -1,22 +1,33 @@
 from typing import List
 
-from ...game import IGame, HostGame, player_for_name
+from ...game import IGame, HostGame, InvalidPlayerError, player_for_name
 from ...serialization import JSONSerializer
 
-from ..arguments import FilePathCLIArgument
+from ..arguments import FilePathCLIArgument, OptionalCLIArgument, StringCLIArgument
 from ..bases import ICLIArgument
+from ..exception import CLIInputError
 
 from .common import BaseCLICommand
-
-_default_players = (player_for_name('heur_rand'), player_for_name('human'))
 
 class NewGameCommand(BaseCLICommand):
 
     def verbs(self) -> List[str]:
         return ('new',)
 
-    def command(self) -> str:
-        game = HostGame.new(_default_players)
+    def arguments(self) -> List[ICLIArgument]:
+        return (
+            OptionalCLIArgument(inner=StringCLIArgument()),
+            OptionalCLIArgument(inner=StringCLIArgument())
+        )
+
+    def command(self, white: str, black: str) -> str:
+        game = HostGame.new()
+
+        try:
+            game.set_players((player_for_name(white), player_for_name(black)))
+        except InvalidPlayerError as err:
+            raise CLIInputError('invalid player: %s'%err)
+
         game.start()
         self.cli.set_state('game', game)
 
@@ -37,7 +48,7 @@ class LoadGameCommand(BaseCLICommand):
         with open(file_path, 'rb') as src_file:
             game = serializer.deserialize(src_file.read(), HostGame)
 
-        game.set_players(_default_players)
+        game.set_players((player_for_name('human'), player_for_name('human')))
         game.start()
         self.cli.set_state('game', game)
 

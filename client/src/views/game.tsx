@@ -2,8 +2,7 @@ import './game.scss';
 
 import { Component, createSignal, For, onMount } from 'solid-js';
 
-import { Board, Game, Piece, Move, Color, GameState } from '../game';
-import { RemotePrototypeHostDriver } from '../game/drivers';
+import { Game, Piece, Move, State, RemoteGameDriver, PieceType, RANKS, FILES } from '../game';
 import { navigate, QueryMap } from '../router';
 
 export interface GameViewProps {
@@ -11,9 +10,9 @@ export interface GameViewProps {
 }
 
 interface BoardViewProps {
-    board: Board;
-    allMoves: Move[];
-    makeMove: (piece: Piece, position: string) => void;
+    board: [string, Piece][];
+    moves: Move[];
+    makeMove: (drag: ActiveDrag, position: string) => void;
 }
 
 interface PieceViewProps {
@@ -37,11 +36,34 @@ interface MoveChoiceProps {
 
 interface ActiveDrag {
     piece: Piece;
+    position: string;
     dragX: number;
     dragY: number;
 }
 
 const BOARD_SIZE_PX = 4 * 16;
+
+const PIECE_DISPLAY_LOOKUP: { [key in PieceType]: [string, string] } = {
+    pawn: ['♙', '♟'],
+    bishop: ['♗', '♝'],
+    rook: ['♖', '♜'],
+    knight: ['♘', '♞'],
+    queen: ['♕', '♛'],
+    king: ['♔', '♚']
+};
+
+const pieceChar = (piece: Piece) => {
+    const set = PIECE_DISPLAY_LOOKUP[piece.type];
+
+    const index = (
+        (window as any).theme == 'dark' ?
+            piece.color == 'white' ? 1 : 0
+            :
+            piece.color == 'black' ? 1 : 0
+    );
+
+    return set[index];
+};
 
 const PieceView: Component<PieceViewProps> = props => {
     return (
@@ -56,7 +78,7 @@ const PieceView: Component<PieceViewProps> = props => {
                 ) + 'px'
             } }
         >
-            { props.piece.name }
+            { pieceChar(props.piece) }
         </div>
     )
 };
@@ -68,7 +90,7 @@ const BoardView: Component<BoardViewProps> = props => {
     const [drag, setDrag] = createSignal<ActiveDrag | null>(null);
 
     const pieceAtPosition = (position: string): Piece | null => {
-        const pieceInfo = props.board.pieces.filter(check => (
+        const pieceInfo = props.board.filter(check => (
             check[0] == position
         ))[0];
         if (!pieceInfo) return null;
@@ -76,12 +98,12 @@ const BoardView: Component<BoardViewProps> = props => {
         return pieceInfo[1];
     };
 
-    const updateDragFromEvent = (piece: Piece, event: MouseEvent) => {
+    const updateDragFromEvent = (piece: Piece, position: string, event: MouseEvent) => {
         if (!viewEl) return;
         const viewBounds = viewEl.getBoundingClientRect();
 
         setDrag({
-            piece,
+            piece, position,
             dragX: event.pageX - viewBounds.x,
             dragY: event.pageY - viewBounds.y
         });
@@ -94,7 +116,7 @@ const BoardView: Component<BoardViewProps> = props => {
         const piece = pieceAtPosition(currentHover);
         if (!piece) return;
 
-        updateDragFromEvent(piece, event);
+        updateDragFromEvent(piece, currentHover, event);
     };
 
     const handleMouseUp = () => {
@@ -102,7 +124,7 @@ const BoardView: Component<BoardViewProps> = props => {
         const currentDrag = drag();
         if (!currentDrag || !currentHovered) return;
 
-        props.makeMove(currentDrag.piece, currentHovered);
+        props.makeMove(currentDrag, currentHovered);
         setDrag(null);
     };
 
@@ -110,16 +132,16 @@ const BoardView: Component<BoardViewProps> = props => {
         const currentDrag = drag();
         if (!currentDrag) return;
 
-        updateDragFromEvent(currentDrag.piece, event);
+        updateDragFromEvent(currentDrag.piece, currentDrag.position, event);
     };
 
     const positionIndexes = (position: string): [number, number] => ([
-        props.board.ranks.length - (props.board.ranks.indexOf(position[1]) + 1),
-        props.board.files.indexOf(position[0])
+        RANKS.length - (RANKS.indexOf(position[1]) + 1),
+        FILES.indexOf(position[0])
     ]);
 
-    const movesForPiece = (piece: Piece | null) => (
-        !piece ? [] : props.allMoves.filter(check => check.piece.id == piece.id)
+    const movesForPosition = (position: string) => (
+        props.moves.filter(check => check.to == position)
     );
 
     const isMoveTarget = (position: string) => {
@@ -127,15 +149,9 @@ const BoardView: Component<BoardViewProps> = props => {
         const currentDrag = drag();
         if (!currentHovered && !currentDrag) return;
 
-        const piece = (
-            currentDrag ?
-                currentDrag.piece : pieceAtPosition(currentHovered as string)
-        );
-        if (!piece) return;
-
         return (
-            movesForPiece(piece).filter(check => (
-                check.to == position
+            movesForPosition(position).filter(check => (
+                check.from == (currentDrag?.position || currentHovered)
             )).length > 0
         );
     };
@@ -148,7 +164,7 @@ const BoardView: Component<BoardViewProps> = props => {
             onMouseUp={ handleMouseUp }
             onMouseMove={ handleMouseMove }
         >
-            <For each={ [...props.board.ranks].reverse() }>{ (rank, i) => (
+            <For each={ [...RANKS].reverse() }>{ (rank, i) => (
                 <div class="rank">
                     <div
                         class="rank-label"
@@ -156,7 +172,7 @@ const BoardView: Component<BoardViewProps> = props => {
                     >
                         { rank }
                     </div>
-                    <For each={ props.board.files }>{ (file, j) => (
+                    <For each={ FILES }>{ (file, j) => (
                         <div
                             classList={ {
                                 cell: true,
@@ -173,15 +189,15 @@ const BoardView: Component<BoardViewProps> = props => {
                 </div>
             ) }</For>
             <div class="file-labels">
-                <For each={ props.board.files }>{ file => (
+                <For each={ FILES }>{ file => (
                     <div class="file-label">{ file }</div>
                 ) }</For>
             </div>
-            <For each={ props.board.pieces }>{ ([position, piece]) => (([rankIndex, fileIndex]) => (
+            <For each={ props.board }>{ ([position, piece]) => (([rankIndex, fileIndex]) => (
                 <PieceView
                     { ...{rankIndex, fileIndex, piece, position} }
                     hovered={ hovered() == position }
-                    drag={ drag()?.piece.id == piece.id ? drag() : null }
+                    drag={ drag()?.position == position ? drag() : null }
                 />
             ))(positionIndexes(position)) }</For>
         </div>
@@ -193,9 +209,9 @@ const MovesView: Component<MovesViewProps> = props => {
         <div class="move-history-view">
             <For each={ [...props.history].reverse() }>{ move => (
                 <div class="move">
-                    { move.piece.name } { move.from } → { move.to }
-                    { move.taken ? (' (takes ' + move.taken.name + ')') : '' }
-                    { move.castle_other ? ( ' (castles)') : '' }
+                    { pieceChar(move.piece) } { move.from } → { move.to }
+                    { move.taken ? (' (takes ' + pieceChar(move.taken) + ')') : '' }
+                    { move.castle ? ( ' (castles)') : '' }
                 </div>
             ) }</For>
         </div>
@@ -218,7 +234,7 @@ const MoveChoiceView: Component<MoveChoiceProps> = props => {
                     class="move-choice-item"
                     onClick={ () => props.makeChoice(item) }
                 >
-                    { item.promotion_to?.name }
+                    { pieceChar({ type: item.promotion as PieceType, color: (item.piece).color }) }
                 </div>
             ) }</For>
         </div>
@@ -226,17 +242,18 @@ const MoveChoiceView: Component<MoveChoiceProps> = props => {
 };
 
 export const GameView: Component<GameViewProps> = props => {
-    const [gameState, setGameState] = createSignal<GameState | null>(null);
+    const [gameState, setGameState] = createSignal<State | null>(null);
     const [moveChoice, setMoveChoice] = createSignal<Move[] | null>(null);
 
     let takeTurn: (move: Move) => Promise<void> = async () => {};
+    let restart: () => Promise<void> = async () => {};
 
-    const takeTurnFromDrop = (piece: Piece, position: string) => {
-        const moves = (gameState() as GameState).legal_moves;
+    const takeTurnFromDrop = (drag: ActiveDrag, position: string) => {
+        const { moves } = (gameState() as State);
 
         const foundMoves: Move[] = [];
         for (const move of moves) {
-            if (move.to == position && move.piece.id == piece.id) {
+            if (move.to == position && move.from == drag.position) {
                 foundMoves.push(move);
             }
         }
@@ -264,7 +281,7 @@ export const GameView: Component<GameViewProps> = props => {
 
         let game: Game | null = null;
         try {
-            game = await RemotePrototypeHostDriver.connect(host, +port);
+            game = await RemoteGameDriver.connect(host, +port);
         }
         catch (err) { }
 
@@ -283,11 +300,19 @@ export const GameView: Component<GameViewProps> = props => {
 
             setGameState(game.state());
         };
+        restart = async () => {
+            if (!game) return;
+
+            const applied = await game.restart();
+            if (!applied) return;
+
+            setGameState(game.state());
+        }
     });
 
     return (
         <div class="game-view">
-            { ((state: GameState | null) => (!state ?
+            { ((state: State | null) => (!state ?
                 <div class="loading">loading...</div>
                 :
                 <div class="game-area">
@@ -301,7 +326,7 @@ export const GameView: Component<GameViewProps> = props => {
                         ))(moveChoice()) }
                         <BoardView
                             board={ state.board }
-                            allMoves={ state.legal_moves }
+                            moves={ state.moves }
                             makeMove={ takeTurnFromDrop }
                         />
                     </div>
@@ -313,11 +338,16 @@ export const GameView: Component<GameViewProps> = props => {
                                 </span>
                                 :
                                 <span> 
-                                    { JSON.stringify(state.active_player) } to move
+                                    { JSON.stringify(state.active) } to move
                                 </span>
                             }
                         </div>
-                        <MovesView history={ state.board.history }/>
+                        <MovesView history={ state.history }/>
+                        <div class="game-actions">
+                            <button onClick={ restart }>
+                                new
+                            </button>
+                        </div>
                     </div>
                 </div>
             ))(gameState()) }

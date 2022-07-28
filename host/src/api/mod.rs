@@ -1,13 +1,15 @@
-use rocket::{ Rocket, Build, build as rocket_build };
+use rocket;
 
 mod cors;
 mod catchers;
-mod endpoints;
 mod responses;
+mod state;
+mod endpoints;
 
-pub fn create_server() -> Rocket<Build> {
-    rocket_build()
+pub fn create_api() -> rocket::Rocket<rocket::Build> {
+    rocket::build()
         .attach(cors::stage())
+        .attach(state::stage())
         .attach(endpoints::stage())
         .attach(catchers::stage())
 }

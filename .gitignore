@@ -1,4 +1,7 @@
 __pycache__
 /host/target
 *.log
-client/node_modules
+*.json
+/prototyping/training
+/client/node_modules
+/stockfish*

@@ -1,14 +1,14 @@
-use std::fmt::{ Display };
+use std::fmt::Display;
 
-use log::{ error };
+use log::error;
 
-use rocket::http::{ Status };
-use rocket::serde::{ Serialize };
-use rocket::serde::json::{ Json };
-use rocket::request::{ Outcome, Request };
-use rocket::response::{ Responder, Result as ResponderResult };
+use rocket::http::Status;
+use rocket::serde::Serialize;
+use rocket::serde::json::Json;
+use rocket::request::{Outcome, Request};
+use rocket::response::{Responder, Result as ResponderResult};
 
-#[derive(Serialize, Clone,)]
+#[derive(Serialize, Clone)]
 pub struct ErrorResponse {
     pub code: u16,
     pub message: String

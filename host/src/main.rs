@@ -1,30 +1,34 @@
-use std::{ io, env };
+use std::{io, env};
 
-use rocket;
-use fern::{ Dispatch, InitError, log_file };
-use log::{ info };
+use tokio;
+use fern;
 
-mod server;
+use log::info;
 
-use server::{ create_server };
+mod chess;
+mod api;
+mod agents;
 
-fn configure_logger() -> Result<(), InitError> {
+fn configure_logger() -> Result<(), fern::InitError> {
     let dest_file = match env::var("CHECKMATE_HOST_LOG_FILE") {
-        Ok(val) => val,
-        _ => "checkmate_host_runtime.log".to_string(),
+        Ok(f) => f,
+        Err(_) => "checkmate_host_runtime.log".to_string()
     };
 
-    Dispatch::new()
-        .chain(log_file(dest_file)?)
+    fern::Dispatch::new()
+        .chain(fern::log_file(dest_file)?)
         .chain(io::stdout())
         .apply()?;
     Ok(())
 }
 
-#[rocket::main]
-async fn main() {
+fn main() {
     configure_logger().unwrap();
-
     info!("booting checkmate host");
-    create_server().launch().await;
+
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+
+    let server = api::create_api();
+
+    runtime.block_on(server.launch());
 }

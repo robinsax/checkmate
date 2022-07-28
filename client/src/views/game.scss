@@ -135,6 +135,7 @@ $cell-size: $space * 16;
     .game-side-area {
         display: inline-block;
         vertical-align: top;
+        position: relative;
         height: $cell-size * 8;
         width: $space * 80;
         padding: $space * 2;
@@ -153,6 +154,15 @@ $cell-size: $space * 16;
         .active-state {
             font-size: $space * 3;
             margin-bottom: $space * 2;
+        }
+
+        .game-actions {
+            position: absolute;
+            bottom: 0px;
+            left: 0px;
+            width: 100%;
+            padding: $space * 2;
+            text-align: right;
         }
     }
 }

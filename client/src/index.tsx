@@ -15,6 +15,7 @@ const Root: Component = () => {
     const updateTheme = (newTheme: string) => {
         document.body.setAttribute('data-theme', newTheme);
         window.localStorage.setItem('theme', newTheme);
+        (window as any).theme = newTheme;
 
         setTheme(newTheme);
     };

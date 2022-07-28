@@ -13,7 +13,7 @@ class HostGame(IGame):
     _result: GameResult
 
     @classmethod
-    def new(cls, players: Tuple[IPlayer, IPlayer]):
+    def new(cls, players: Tuple[IPlayer, IPlayer] = None):
         ranks = ('1', '2', '3', '4', '5', '6', '7', '8')
         files = ('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h')
 
@@ -85,7 +85,7 @@ class HostGame(IGame):
         raise GameStateError('invalid move')
 
     def start(self) -> None:
-        if not self.result:
+        if self.active_player and not self.result:
             self.active_player.take_turn(self)
 
     def _check_result(self) -> GameResult:
