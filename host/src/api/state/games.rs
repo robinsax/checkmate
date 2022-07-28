@@ -12,7 +12,7 @@ use crate::chess::game::Game;
 use crate::chess::agent::FormatAgent;
 use crate::chess::format::StateFormat;
 
-use crate::agents::HeurRandAgent;
+use crate::agents::{HeurRandAgent, HeurNoBlunderAgent};
 
 pub type GameHostState = State<Arc<Mutex<GameHost>>>;
 
@@ -69,7 +69,7 @@ impl GameHost {
         }
 
         info!("make_move: {} <- {}", id, move_alg);
-        self.move_txs[id].send(move_alg.clone()).await;
+        self.move_txs[id].send(move_alg.clone()).await.unwrap();
 
         Ok(self.get_next_state(id).await)
     }
@@ -80,7 +80,7 @@ impl GameHost {
 
         let game = Arc::new(Game::new(
             Mutex::new(Box::new(RemoteAgent{move_rx: rx})),
-            Mutex::new(Box::new(HeurRandAgent::new()))
+            Mutex::new(Box::new(HeurNoBlunderAgent::new()))
         ));
         let game2 = Arc::clone(&game);
 
@@ -93,7 +93,7 @@ impl GameHost {
             loop {
                 game2.tick().await;
                 if !remote_agent {
-                    s_tx.send(()).await;
+                    s_tx.send(()).await.unwrap();
                 }
                 remote_agent = !remote_agent;
             }

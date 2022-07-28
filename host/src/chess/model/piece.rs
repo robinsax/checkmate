@@ -1,8 +1,10 @@
-use readonly::{ make as make_readonly };
+use std::fmt;
 
-use super::color::{ Color };
+use readonly;
 
-#[derive(Clone, PartialEq, Debug)]
+use super::color::Color;
+
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum PieceType {
     Pawn,
     Bishop,
@@ -12,9 +14,9 @@ pub enum PieceType {
     King
 }
 
-impl PieceType {
-    pub fn to_char(&self) -> char {
-        match self {
+impl From<&PieceType> for char {
+    fn from(piece_type: &PieceType) -> char {
+        match *piece_type {
             PieceType::Pawn => 'P',
             PieceType::Bishop => 'B',
             PieceType::Rook => 'R',
@@ -25,11 +27,36 @@ impl PieceType {
     }
 }
 
-#[make_readonly]
+impl fmt::Display for PieceType {
+    fn fmt(&self, dest: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(dest, "{}", Into::<char>::into(self))
+    }
+}
+
+impl PieceType {
+    pub fn materiel_value(&self) -> u8 {
+        match self {
+            PieceType::Pawn => 1,
+            PieceType::Bishop => 3,
+            PieceType::Knight => 3,
+            PieceType::Rook => 5,
+            PieceType::Queen => 9,
+            PieceType::King => 0
+        }
+    }
+}
+
+#[readonly::make]
 #[derive(Clone, Debug, PartialEq)]
 pub struct Piece {
     pub color: Color,
     pub piece_type: PieceType
+}
+
+impl fmt::Display for Piece {
+    fn fmt(&self, dest: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(dest, "{}{}", self.color, self.piece_type)
+    }
 }
 
 impl Piece {

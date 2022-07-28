@@ -16,9 +16,9 @@ pub struct EndResult {
 }
 
 impl EndResult {
-    pub fn win(winner: &Color, condition: EndCondition) -> Self {
+    pub fn win(winner: Color, condition: EndCondition) -> Self {
         Self{
-            winner: Some(winner.clone()),
+            winner: Some(winner),
             condition
         }
     }

@@ -14,7 +14,7 @@ pub struct Game {
 impl Game {
     pub fn new(white_player: Mutex<Box<dyn ModelAgent>>, black_player: Mutex<Box<dyn ModelAgent>>) -> Self {
         Self{
-            state: Mutex::new(State::create_initial()),
+            state: Mutex::new(State::initial()),
             players: [white_player, black_player]
         }
     }
@@ -26,12 +26,13 @@ impl Game {
 
     pub async fn tick(&self) {
         let state = (self.state.lock().await).clone();
-        let agent_index = state.active_player.to_index();
-        let agent = &mut self.players[agent_index].lock().await;
+
+        let agent_idx: usize = state.active_color.into();
+        let agent = &mut self.players[agent_idx].lock().await;
 
         info!("game_tick: block on agent");
         let next_move = &agent.get_move_for_model(&state).await;
-        info!("{} {} {} -> {}", next_move.piece.color, next_move.piece.piece_type.to_char(), next_move.from, next_move.to);
+        info!("{} {} {} -> {}", next_move.piece.color, next_move.piece.piece_type, next_move.from, next_move.to);
 
         let mut state_lock = self.state.lock().await;
         *state_lock = state_lock.next_for_move(next_move);

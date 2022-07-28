@@ -56,8 +56,8 @@ impl EndResultFormat {
 
 impl StateFormat {
     pub fn from_model(state: &State) -> Self {
-        let white_pieces = state.board.piece_positions_for(&Color::White);
-        let black_pieces = state.board.piece_positions_for(&Color::Black);
+        let white_pieces = state.board.piece_positions_for(Color::White);
+        let black_pieces = state.board.piece_positions_for(Color::Black);
 
         let mut board_format: Vec<String> = Vec::with_capacity(white_pieces.len() + black_pieces.len());
 
@@ -66,7 +66,7 @@ impl StateFormat {
                 let piece = state.board[position].as_ref().unwrap();
 
                 board_format.push(
-                    format!("{}{}{}", piece.color, piece.piece_type.to_char(), position)
+                    format!("{}{}{}", piece.color, piece.piece_type, position)
                 );
             }
         };
@@ -80,14 +80,14 @@ impl StateFormat {
                 moves_format.push(
                     MoveFormat{
                         r#move: format!("{}{}", move_item.from, move_item.to),
-                        piece: format!("{}{}", move_item.piece.color, move_item.piece.piece_type.to_char()),
+                        piece: format!("{}{}", move_item.piece.color, move_item.piece.piece_type),
                         promo: match &move_item.promotion {
-                            Some(promo) => Some(format!("{}", promo.to_char())),
+                            Some(promo) => Some(format!("{}", promo)),
                             None => None
                         },
                         taken: match &move_item.taken {
                             Some(taken) => Some(
-                                format!("{}{}", taken.color, taken.piece_type.to_char())
+                                format!("{}{}", taken.color, taken.piece_type)
                             ),
                             None => None
                         },
@@ -106,8 +106,8 @@ impl StateFormat {
 
         Self{
             board: board_format,
-            active: state.active_player.to_string(),
-            moves: convert_moves(&state.legal_moves()),
+            active: state.active_color.to_string(),
+            moves: convert_moves(&state.get_legal_moves()),
             history: convert_moves(&state.history),
             end: EndResultFormat::from_model(state.check_result())
         }

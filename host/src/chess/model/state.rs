@@ -3,31 +3,31 @@ use readonly;
 use super::color::Color;
 use super::position::Position;
 use super::piece::PieceType;
-use super::r#move::Move;
+use super::move_repr::Move;
 use super::board::Board;
 use super::end::{EndResult, EndCondition};
-use super::move_rules::moves_for;
+use super::move_rules::compute_moves_for;
 
 #[readonly::make]
 #[derive(Clone)]
 pub struct State {
     pub board: Board,
     pub history: Vec<Move>,
-    pub active_player: Color,
+    pub active_color: Color,
     lookahead: bool
 }
 
 impl State {
-    pub fn create_initial() -> Self {
+    pub fn initial() -> Self {
         Self{
-            board: Board::create_initial(),
+            board: Board::initial(),
             history: Vec::new(),
-            active_player: Color::White,
+            active_color: Color::White,
             lookahead: false
         }
     }
 
-    fn color_has_king_only(&self, color: &Color) -> bool {
+    fn color_has_king_only(&self, color: Color) -> bool {
         let positions = self.board.piece_positions_for(color);
 
         for position in positions {
@@ -42,17 +42,17 @@ impl State {
     }
 
     pub fn check_result(&self) -> Option<EndResult> {
-        if self.color_has_king_only(&Color::White) && self.color_has_king_only(&Color::Black) {
+        if self.color_has_king_only(Color::White) && self.color_has_king_only(Color::Black) {
             return Some(
                 EndResult::draw(EndCondition::InsufficientMateriel)
             );
         }
 
-        let moves = self.legal_moves();
+        let moves = self.get_legal_moves();
         if moves.len() == 0 {
-            if self.is_check_against(&self.active_player) {
+            if self.is_check_against(self.active_color) {
                 return Some(
-                    EndResult::win(&self.active_player.other(), EndCondition::Checkmate)
+                    EndResult::win(!self.active_color, EndCondition::Checkmate)
                 );
             }
 
@@ -76,13 +76,13 @@ impl State {
         State{
             board: new_board,
             history: new_history,
-            active_player: self.active_player.other(),
+            active_color: !self.active_color,
             lookahead: false
         }
     }
 
-    pub fn is_check_against(&self, color: &Color) -> bool {
-        let check_moves = self.legal_moves_for_with_options(&color.other(), true);
+    pub fn is_check_against(&self, color: Color) -> bool {
+        let check_moves = self.get_legal_moves_for_with_lookahead(!color, true);
 
         for check_move in check_moves {
             if let Some(piece) = &check_move.taken {
@@ -95,12 +95,6 @@ impl State {
         false
     }
 
-    pub fn move_escapes_check(&self, check_move: &Move) -> bool {
-        let next = self.next_for_move(check_move);
-
-        !next.is_check_against(&self.active_player)
-    }
-
     pub fn has_piece_at_moved(&self, position: &Position) -> bool {
         for check in &self.history {
             if check.to == *position {
@@ -111,15 +105,15 @@ impl State {
         false
     }
 
-    pub fn legal_moves(&self) -> Vec<Move> {
-        self.legal_moves_for(&self.active_player)
+    pub fn get_legal_moves(&self) -> Vec<Move> {
+        self.get_legal_moves_for(self.active_color)
     }
     
-    pub fn legal_moves_for(&self, color: &Color) -> Vec<Move> {
-        self.legal_moves_for_with_options(color, false)
+    pub fn get_legal_moves_for(&self, color: Color) -> Vec<Move> {
+        self.get_legal_moves_for_with_lookahead(color, false)
     }
 
-    fn legal_moves_for_with_options(&self, color: &Color, lookahead: bool) -> Vec<Move> {
+    fn get_legal_moves_for_with_lookahead(&self, color: Color, lookahead: bool) -> Vec<Move> {
         let piece_positions = self.board.piece_positions_for(color);
 
         let mut moves: Vec<Move> = Vec::with_capacity(10);
@@ -127,7 +121,7 @@ impl State {
         for position in piece_positions {
             let piece = self.board[position].as_ref().unwrap();
             
-            moves.extend(moves_for(self, &position, &piece, lookahead));
+            moves.extend(compute_moves_for(self, &position, &piece, lookahead));
         }
 
         moves
@@ -147,7 +141,7 @@ mod tests {
             state.board[&Position::from_alg("e2".to_string()).unwrap()],
             Some(Piece::new(Color::White, PieceType::Pawn))
         );
-        assert_eq!(state.active_player, Color::White);
+        assert_eq!(state.active_color, Color::White);
         assert_eq!(state.history.len(), 0);
 
         assert_eq!(state.legal_moves().len(), 20);

@@ -1,9 +1,9 @@
 use bitmask_enum::bitmask;
 
-use super::position::{ Position };
-use super::piece::{ Piece };
-use super::r#move::{ Move };
-use super::state::{ State };
+use super::position::Position;
+use super::piece::Piece;
+use super::move_repr::Move;
+use super::state::State;
 
 #[bitmask(u8)]
 pub(super) enum MoveCondition {
@@ -62,12 +62,12 @@ impl<'t> MovesBuilder<'t> {
 
         let mut result_move = Move::new(self.from.clone(), position.clone(), self.piece.clone());
         if let Some(occupant) = dest_position {
-            result_move.add_taken(occupant.clone());
+            result_move.set_taken(occupant.clone());
         }
 
         if !self.lookahead {
             let next_state = self.state.next_for_move(&result_move);
-            if next_state.is_check_against(&self.piece.color) {
+            if next_state.is_check_against(self.piece.color) {
                 return None;
             }
         }
@@ -79,7 +79,7 @@ impl<'t> MovesBuilder<'t> {
     pub fn push_unchecked(&mut self, to: &Position, castle: &(Position, Position)) -> &Move {
         let mut safe_move = Move::new(self.from.clone(), to.clone(), self.piece.clone());
 
-        safe_move.add_castle(castle.clone());
+        safe_move.set_castle(castle.clone());
 
         self.moves.push(safe_move);
         &self.moves.last().unwrap()

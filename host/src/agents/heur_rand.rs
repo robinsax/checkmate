@@ -12,7 +12,7 @@ pub struct HeurRandAgent;
 #[async_trait]
 impl ModelAgent for HeurRandAgent {
     async fn get_move_for_model(&mut self, state: &State) -> Move {
-        let moves = &state.legal_moves()[..];
+        let moves = &state.get_legal_moves()[..];
         let mut rng = thread_rng();
 
         moves.choose(&mut rng).unwrap().clone()

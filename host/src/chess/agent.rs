@@ -23,13 +23,13 @@ impl<T: FormatAgent + Sync> ModelAgent for T {
 
         fn check_fmt(check: &Move) -> String {
             if let Some(promo) = &check.promotion {
-                return format!("{}{}{}", check.from, check.to, promo.to_char());
+                return format!("{}{}{}", check.from, check.to, promo);
             }
 
             format!("{}{}", check.from, check.to)
         }
 
-        state.legal_moves().iter().find(|&check| {
+        state.get_legal_moves().iter().find(|&check| {
             check_fmt(check) == *move_alg
         }).unwrap().clone()
     }

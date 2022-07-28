@@ -1,24 +1,32 @@
-use std::fmt::{ Display, Formatter, Result as FmtResult };
+use std::fmt;
+use std::ops;
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Color {
     White,
     Black
 }
 
-impl Display for Color {
-    fn fmt(&self, formatter: &mut Formatter<'_>) -> FmtResult {
-        write!(formatter, "{}", if *self == Color::White { 'w' } else { 'b' })
+impl fmt::Display for Color {
+    fn fmt(&self, dest: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(dest, "{}", match *self {
+            Color::White => 'w',
+            Color::Black => 'b'
+        })
     }
 }
 
-impl Color {
-    pub fn to_index(&self) -> usize {
-        if *self == Color::White { 0 } else { 1 }
-    }
+impl ops::Not for Color {
+    type Output = Self;
 
-    pub(super) fn other(&self) -> Color {
-        if *self == Color::White { Color::Black } else { Color::White }
+    fn not(self) -> Self::Output {
+        if self == Color::White { Color::Black } else { Color::White }
+    }
+}
+
+impl From<Color> for usize {
+    fn from(color: Color) -> Self {
+        if color == Color::White { 0 } else { 1 }
     }
 }
 
@@ -33,14 +41,8 @@ mod tests {
     }
 
     #[test]
-    fn test_to_index() {
-        assert_eq!(Color::White.to_index(), 0);
-        assert_eq!(Color::Black.to_index(), 1);
-    }
-
-    #[test]
-    fn test_other() {
-        assert_eq!(Color::White.other(), Color::Black);
-        assert_eq!(Color::Black.other(), Color::White);
+    fn test_not() {
+        assert_eq!(!Color::White, Color::Black);
+        assert_eq!(!Color::Black, Color::White);
     }
 }
