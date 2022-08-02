@@ -5,7 +5,6 @@ use rocket::serde::json::Json;
 use rocket::http::Status;
 
 use crate::chess::format::StateFormat;
-
 use super::super::state::{AuthToken, AuthRegistryState, GameHostState};
 use super::super::responses::{ResponseCase, error_response};
 

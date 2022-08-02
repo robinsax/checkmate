@@ -2,8 +2,9 @@ use readonly;
 
 use super::color::Color;
 use super::position::Position;
-use super::piece::PieceType;
-use super::move_repr::Move;
+use super::piece_type::PieceType;
+use super::piece::Piece;
+use super::move_repr::{Move, CastleMoves};
 use super::board::Board;
 use super::end::{EndResult, EndCondition};
 use super::move_rules::compute_moves_for;
@@ -12,17 +13,36 @@ use super::move_rules::compute_moves_for;
 #[derive(Clone)]
 pub struct State {
     pub board: Board,
-    pub history: Vec<Move>,
     pub active_color: Color,
+    pub move_history: Vec<Move>,
+    pub allowed_castles: [CastleMoves; 2],
+    pub en_passant_target: Option<Position>,
     lookahead: bool
 }
 
-impl State {
-    pub fn initial() -> Self {
+impl Default for State {
+    fn default() -> Self {
         Self{
-            board: Board::initial(),
-            history: Vec::new(),
+            board: Board::default(),
             active_color: Color::White,
+            move_history: Vec::new(),
+            allowed_castles: [CastleMoves::all(), CastleMoves::all()],
+            en_passant_target: None,
+            lookahead: false
+        }
+    }
+}
+
+impl State {
+    pub(super) fn new(
+        board: Board, active_color: Color,
+        allowed_castles: [CastleMoves; 2],
+        en_passant_target: Option<Position>,
+        move_history: Vec<Move>
+    ) -> Self {
+        Self{
+            board, move_history, active_color,
+            allowed_castles, en_passant_target,
             lookahead: false
         }
     }
@@ -65,7 +85,7 @@ impl State {
     }
 
     pub fn next_for_move(&self, next_move: &Move) -> State {
-        let mut new_history = self.history.clone();
+        let mut new_history = self.move_history.clone();
         new_history.push(next_move.clone());
 
         let new_board = self.board.next_for_move(
@@ -75,8 +95,10 @@ impl State {
 
         State{
             board: new_board,
-            history: new_history,
+            move_history: new_history,
             active_color: !self.active_color,
+            en_passant_target: None,
+            allowed_castles: self.allowed_castles.clone(),
             lookahead: false
         }
     }
@@ -96,7 +118,7 @@ impl State {
     }
 
     pub fn has_piece_at_moved(&self, position: &Position) -> bool {
-        for check in &self.history {
+        for check in &self.move_history {
             if check.to == *position {
                 return true;
             }
@@ -135,15 +157,15 @@ mod tests {
 
     #[test]
     fn test_initial_state() {
-        let state = State::create_initial();
+        let state = State::default();
 
         assert_eq!(
-            state.board[&Position::from_alg("e2".to_string()).unwrap()],
+            state.board[&Position::from_alg(&"e2".to_string()).unwrap()],
             Some(Piece::new(Color::White, PieceType::Pawn))
         );
         assert_eq!(state.active_color, Color::White);
-        assert_eq!(state.history.len(), 0);
+        assert_eq!(state.move_history.len(), 0);
 
-        assert_eq!(state.legal_moves().len(), 20);
+        assert_eq!(state.get_legal_moves().len(), 20);
     }
 }

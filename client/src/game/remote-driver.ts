@@ -129,6 +129,8 @@ export class RemoteGameDriver implements Game {
     }
 
     private hydrateStateFrom(input: StateFormat) {
+        const { active, moves, history, end, board: inBoard } = input;
+
         const parsePiece = (input: string): Piece => ({
             type: PIECE_TYPE_LOOKUP[input[1]],
             color: COLOR_LOOKUP[input[0]]
@@ -136,8 +138,8 @@ export class RemoteGameDriver implements Game {
 
         const parseMoveStr = (input: string) => [input.substring(0, 2), input.substring(2)];
 
-        const board = input.board.map<[string, Piece]>(input => [
-            input.substring(2), parsePiece(input.substring(0, 2))
+        const board = inBoard.map<[string, Piece]>(pieceInfo => [
+            pieceInfo.substring(2), parsePiece(pieceInfo.substring(0, 2))
         ]);
 
         const parseMove = (input: MoveFormat): Move => {
@@ -156,8 +158,6 @@ export class RemoteGameDriver implements Game {
                 promotion: input.promo ? PIECE_TYPE_LOOKUP[input.promo] : null
             };
         };
-       
-        const { active, moves, history } = input;
 
         this.currentState = {
             board,
@@ -165,10 +165,10 @@ export class RemoteGameDriver implements Game {
             moves: moves.map(parseMove),
             history: history.map(parseMove),
             result: (
-                input.end ?
+                end ?
                     {
-                        winner: COLOR_LOOKUP[input.end.winner] || null,
-                        condition: input.end.condition
+                        winner: COLOR_LOOKUP[end.winner] || null,
+                        condition: end.condition
                     }
                     :
                     null

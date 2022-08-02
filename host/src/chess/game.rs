@@ -2,7 +2,7 @@ use log::info;
 
 use tokio::sync::Mutex;
 
-use super::model::State;
+use super::model::{State, Color};
 use super::agent::ModelAgent;
 use super::format::StateFormat;
 
@@ -14,13 +14,14 @@ pub struct Game {
 impl Game {
     pub fn new(white_player: Mutex<Box<dyn ModelAgent>>, black_player: Mutex<Box<dyn ModelAgent>>) -> Self {
         Self{
-            state: Mutex::new(State::initial()),
+            state: Mutex::new(State::default()),
             players: [white_player, black_player]
         }
     }
 
     pub async fn get_state(&self) -> StateFormat {
         let state = self.state.lock().await;
+
         StateFormat::from_model(&state)
     }
 
@@ -32,7 +33,7 @@ impl Game {
 
         info!("game_tick: block on agent");
         let next_move = &agent.get_move_for_model(&state).await;
-        info!("{} {} {} -> {}", next_move.piece.color, next_move.piece.piece_type, next_move.from, next_move.to);
+        info!("{}", next_move);
 
         let mut state_lock = self.state.lock().await;
         *state_lock = state_lock.next_for_move(next_move);

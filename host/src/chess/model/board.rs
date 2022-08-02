@@ -3,7 +3,8 @@ use std::ops;
 
 use super::color::Color;
 use super::position::Position;
-use super::piece::{Piece, PieceType};
+use super::piece_type::PieceType;
+use super::piece::Piece;
 
 #[derive(Clone)]
 pub struct Board {
@@ -23,76 +24,24 @@ impl ops::Index<&Position> for Board {
     }
 }
 
-impl fmt::Display for Board {
-    fn fmt(&self, dest: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut repr = String::with_capacity(9 * 8);
-
-        for rank in 0..8 {
-            for file in 0..8 {
-                repr.push(
-                    match &self[&Position::new(rank, file)] {
-                        Some(piece) => (&piece.piece_type).into(),
-                        None => match rank + file % 2 {
-                            0 => 'x',
-                            _ => ' '
-                        }
-                    }
-                )
-            }       
-            
-            repr.push('\n');
-        }
-
-        write!(dest, "{}", repr)
-    }
-}
-
 impl Board {
-    fn empty() -> Self {
+    pub fn empty() -> Self {
         Self{
             positions: Default::default(),
-            piece_positions: [Vec::new(), Vec::new()]
+            piece_positions: Default::default()
         }
     }
 
-    pub fn initial() -> Self {
-        let mut inst = Self::empty();
+    pub(super) fn new(positions: [[Option<Piece>; 8]; 8], piece_positions: [Vec<Position>; 2]) -> Self {
+        Self{positions, piece_positions}
+    }
 
-        let mut create_rank = |color: Color, rank: usize, pieces: &Vec<PieceType>| {
-            for (i, piece) in pieces.iter().enumerate() {
-                inst.positions[rank][i] = Some(Piece::new(color.clone(), piece.clone()));
+    //  TODO: Rm.
+    pub fn place_piece(&mut self, position: Position, piece: Piece) {
+        let owner_idx: usize = piece.color.into();
 
-                let color_idx: usize = color.into();
-                inst.piece_positions[color_idx].push(Position::new(rank, i));
-            }
-        };
-
-        let back_rank = &vec![
-            PieceType::Rook,
-            PieceType::Knight,
-            PieceType::Bishop,
-            PieceType::Queen,
-            PieceType::King,
-            PieceType::Bishop,
-            PieceType::Knight,
-            PieceType::Rook
-        ];
-        let pawn_rank = &vec![
-            PieceType::Pawn,
-            PieceType::Pawn,
-            PieceType::Pawn,
-            PieceType::Pawn,
-            PieceType::Pawn,
-            PieceType::Pawn,
-            PieceType::Pawn,
-            PieceType::Pawn
-        ];
-        create_rank(Color::Black, 7, back_rank);
-        create_rank(Color::Black, 6, pawn_rank);
-        create_rank(Color::White, 1, pawn_rank);
-        create_rank(Color::White, 0, back_rank);
-
-        inst
+        self.positions[position.rank][position.file] = Some(piece);
+        self.piece_positions[owner_idx].push(position);
     }
 
     pub fn piece_positions_for(&self, color: Color) -> &Vec<Position> {
@@ -155,7 +104,7 @@ mod tests {
 
     #[test]
     fn test_indexing() {
-        let board = Board::create_initial();
+        let board = Board::default();
         
         assert_eq!(
             board[&Position::from_alg("a1".to_string()).unwrap()],
@@ -169,7 +118,7 @@ mod tests {
     
     #[test]
     fn test_piece_positions_for() {
-        let board = Board::create_initial();
+        let board = Board::default();
         
         assert_eq!(
             board.piece_positions_for(Color::White).len(),
@@ -179,23 +128,26 @@ mod tests {
     
     #[test]
     fn test_next_for_move() {
-        let board = Board::create_initial().next_for_move(
-            &Position::from_alg("e2".to_string()).unwrap(),
-            &Position::from_alg("e4".to_string()).unwrap()
+        let board = Board::default().next_for_move(
+            &Position::from_alg("e2").unwrap(),
+            &Position::from_alg("e4").unwrap(),
+            &None, &None
         ).next_for_move(
-            &Position::from_alg("f7".to_string()).unwrap(),
-            &Position::from_alg("f5".to_string()).unwrap()
+            &Position::from_alg("f7").unwrap(),
+            &Position::from_alg("f5").unwrap(),
+            &None, &None
         ).next_for_move(
-            &Position::from_alg("e4".to_string()).unwrap(),
-            &Position::from_alg("f5".to_string()).unwrap()
+            &Position::from_alg("e4").unwrap(),
+            &Position::from_alg("f5").unwrap(),
+            &None, &None
         );
 
         assert_eq!(
-            board[&Position::from_alg("e2".to_string()).unwrap()],
+            board[&Position::from_alg("e2").unwrap()],
             None
         );
         assert_eq!(
-            board[&Position::from_alg("f5".to_string()).unwrap()],
+            board[&Position::from_alg("f5").unwrap()],
             Some(Piece::new(Color::White, PieceType::Pawn))
         );
         assert_eq!(

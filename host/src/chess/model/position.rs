@@ -2,7 +2,7 @@ use std::fmt;
 
 use readonly;
 
-use super::errors::ValidationError;
+use super::super::errors::ValidationError;
 use super::color::Color;
 
 static RANKS: &'static [char] = &['1', '2', '3', '4', '5', '6', '7', '8'];
@@ -25,13 +25,20 @@ impl fmt::Display for Position {
     }
 }
 
+impl AsRef<Position> for Position {
+    fn as_ref(&self) -> &Position {
+        self
+    }
+}
+
 impl Position {
-    pub fn from_alg(alg: &String) -> Result<Self, ValidationError> {
-        if alg.len() != 2 {
-            return Err(ValidationError::Parse{token: alg.to_owned()});
+    pub fn from_alg(alg: impl AsRef<str>) -> Result<Self, ValidationError> {
+        let alg_str = alg.as_ref();
+        if alg_str.len() != 2 {
+            return Err(ValidationError::Parse{token: alg_str.to_owned()});
         }
 
-        let alg_bytes = alg.as_bytes();
+        let alg_bytes = alg_str.as_bytes();
         let (rank_char, file_char) = (alg_bytes[1] as char, alg_bytes[0] as char);
 
         let rank = RANKS.iter().position(|c| *c == rank_char).ok_or(
@@ -50,6 +57,20 @@ impl Position {
 
     pub fn is_valid(&self) -> bool {
         (self.rank < 8) && (self.file < 8)
+    }
+
+    pub fn is_rank(&self, rank: impl AsRef<str>) -> bool {
+        let rank_str = rank.as_ref().chars().nth(0).unwrap();
+        let check_rank = RANKS.iter().position(|c| *c == rank_str).unwrap();
+
+        self.rank == check_rank
+    }
+    
+    pub fn is_file(&self, file: impl AsRef<str>) -> bool {
+        let file_str = file.as_ref().chars().nth(0).unwrap();
+        let check_file = FILES.iter().position(|c| *c == file_str).unwrap();
+
+        self.file == check_file
     }
 
     pub fn is_end_rank(&self) -> bool {
@@ -91,23 +112,27 @@ mod tests {
 
     #[test]
     fn test_from_alg() {
-        assert_eq!(Position::from_alg("a1".to_owned()), Ok(Position::new(0, 0)));
-        assert_eq!(Position::from_alg("e8".to_owned()), Ok(Position::new(7, 4)));
+        assert_eq!(Position::from_alg("a1"), Ok(Position::new(0, 0)));
+        assert_eq!(Position::from_alg("e8"), Ok(Position::new(7, 4)));
+
+        assert_eq!(Position::from_alg("j1"), Err(ValidationError::Parse{token: "j".to_string()}));
     }
 
     #[test]
     fn test_walk() {
-        let initial = Position::from_alg("b2".to_owned()).unwrap();
+        let initial = Position::from_alg("b2").unwrap();
 
         assert_eq!(initial.left(), Position::new(1, 0));
         assert_eq!(initial.right(), Position::new(1, 2));
         assert_eq!(initial.up(), Position::new(2, 1));
         assert_eq!(initial.down(), Position::new(0, 1));
+        assert_eq!(initial.forward(Color::White), Position::new(2, 1));
+        assert_eq!(initial.forward(Color::Black), Position::new(0, 1));
     }
 
     #[test]
     fn test_validation() {
-        let initial = Position::from_alg("b2".to_owned()).unwrap();
+        let initial = Position::from_alg("b2").unwrap();
 
         assert_eq!(initial.is_valid(), true);
         assert_eq!(initial.left().left().is_valid(), false);

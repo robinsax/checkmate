@@ -145,7 +145,7 @@ $cell-size: $space * 16;
 
         .move-history-view {
             font-size: $space * 4;
-            max-height: $space * 60;
+            height: $space * 60;
             overflow-y: scroll;
             width: calc(100% + #{$space * 5});
             padding-right: $space * 5;
@@ -165,4 +165,17 @@ $cell-size: $space * 16;
             text-align: right;
         }
     }
+}
+
+.chat-area {
+    @include on-color-hard(background-color);
+    position: fixed;
+    bottom: 0px;
+    right: -$space * 5;
+    font-size: $space * 3;
+    height: $space * 70;
+    width: $space * 50;
+    overflow-y: scroll;
+    padding: $space * 2;
+    padding-right: $space * 7;
 }

@@ -1,9 +1,18 @@
 use std::fmt;
 
 use readonly;
+use bitmask_enum::bitmask;
 
 use super::position::Position;
-use super::piece::{PieceType, Piece};
+use super::piece_type::PieceType;
+use super::piece::Piece;
+
+#[bitmask(u8)]
+#[derive(Clone, Copy)]
+pub enum CastleMoves {
+    KingSide,
+    QueenSide
+}
 
 #[readonly::make]
 #[derive(Clone, Debug)]
@@ -51,5 +60,16 @@ impl Move {
         }
 
         variants
+    }
+
+    pub fn disallowed_castle(&self) -> Option<CastleMoves> {
+        if let Some(castle) = &self.castle {
+            return Some(match castle.0.file > castle.1.file {
+                true => CastleMoves::KingSide,
+                false => CastleMoves::QueenSide
+            });
+        }
+
+        None
     }
 }

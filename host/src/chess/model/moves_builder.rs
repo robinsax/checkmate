@@ -21,9 +21,10 @@ pub(super) struct MovesBuilder<'t> {
 }
 
 impl<'t> MovesBuilder<'t> {
-    pub fn new(state: &'t State, from: &'t Position, piece: &'t Piece, lookahead: bool) -> Self {
+    pub fn new(state: &'t State, from: &'t Position, lookahead: bool) -> Self {
         Self{
-            state, piece, from, lookahead,
+            state, from, lookahead,
+            piece: state.board[from].as_ref().unwrap(),
             moves: Vec::new()
         }
     }
@@ -104,5 +105,32 @@ impl<'t> MovesBuilder<'t> {
 
     pub fn build(&self) -> Vec<Move> {
         self.moves.to_vec()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_push_with_invalid() {
+        let state = State::default();
+        let position = Position::from_alg("a1").unwrap();
+        let mut builder = MovesBuilder::new(&state, &position, false);
+
+        builder.push_if_valid(&Position::from_alg("a2").unwrap());
+
+        assert_eq!(builder.build().len(), 0);
+    }
+
+    #[test]
+    fn test_push_with_valid() {
+        let state = State::default();
+        let position = Position::from_alg("c2").unwrap();
+        let mut builder = MovesBuilder::new(&state, &position, false);
+
+        builder.push_if_valid(&Position::from_alg("c3").unwrap());
+
+        assert_eq!(builder.build().len(), 1);
     }
 }

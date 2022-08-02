@@ -1,12 +1,13 @@
 use std::sync::Arc;
 use std::collections::HashMap;
 
-use log::info;
 use tokio;
+use log::info;
+use rocket::State;
+use serde::{Serialize};
+use async_trait::async_trait;
 use tokio::sync::Mutex;
 use tokio::sync::mpsc::{Sender, Receiver, channel};
-use async_trait::async_trait;
-use rocket::State;
 
 use crate::chess::game::Game;
 use crate::chess::agent::FormatAgent;
@@ -39,7 +40,7 @@ impl FormatAgent for RemoteAgent {
 
 impl GameHost {
     pub fn new() -> Self {
-        Self {
+        Self{
             games: HashMap::new(),
             move_txs: HashMap::new(),
             state_rxs: HashMap::new()
@@ -75,17 +76,17 @@ impl GameHost {
     }
 
     pub async fn create_game(&mut self, id: &String) -> StateFormat {
-        let (tx, rx) = channel(1);
+        let (m_tx, m_rx) = channel(1);
         let (s_tx, s_rx) = channel(1);
 
         let game = Arc::new(Game::new(
-            Mutex::new(Box::new(RemoteAgent{move_rx: rx})),
+            Mutex::new(Box::new(RemoteAgent{move_rx: m_rx})),
             Mutex::new(Box::new(HeurNoBlunderAgent::new()))
         ));
         let game2 = Arc::clone(&game);
 
         self.games.insert(id.to_string(), game);
-        self.move_txs.insert(id.to_string(), tx);
+        self.move_txs.insert(id.to_string(), m_tx);
         self.state_rxs.insert(id.to_string(), Mutex::new(s_rx));
 
         tokio::spawn(async move {

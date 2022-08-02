@@ -4,7 +4,7 @@ mod auth;
 mod games;
 
 pub use auth::{User, AuthRegistryState, AuthToken};
-pub use games::{GameHostState};
+pub use games::GameHostState;
 
 pub fn stage() -> AdHocFairing {
     AdHocFairing::on_ignite("endpoints", |rocket| async {

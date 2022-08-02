@@ -108,7 +108,7 @@ impl StateFormat {
             board: board_format,
             active: state.active_color.to_string(),
             moves: convert_moves(&state.get_legal_moves()),
-            history: convert_moves(&state.history),
+            history: convert_moves(&state.move_history),
             end: EndResultFormat::from_model(state.check_result())
         }
     }

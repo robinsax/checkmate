@@ -1,9 +1,10 @@
 use super::color::Color;
 use super::position::Position;
-use super::piece::{Piece, PieceType};
+use super::piece_type::PieceType;
+use super::piece::Piece;
 use super::move_repr::Move;
 use super::state::State;
-use super::move_builder::{MovesBuilder, MoveCondition};
+use super::moves_builder::{MovesBuilder, MoveCondition};
 
 type PieceMoveFinder = fn (
     builder: &mut MovesBuilder, state: &State, position: &Position, color: Color
@@ -133,7 +134,7 @@ pub fn compute_moves_for(state: &State, position: &Position, piece: &Piece, look
         PieceType::King => king_moves
     };
 
-    let mut builder = MovesBuilder::new(state, position, piece, lookahead);
+    let mut builder = MovesBuilder::new(state, position, lookahead);
 
     finder(&mut builder, state, position, piece.color)
 }
