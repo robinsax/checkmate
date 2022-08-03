@@ -1,0 +1,19 @@
+[package]
+name = "checkmate"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = "1.20.1"
+rocket = { version = "0.5.0-rc.1", features = ["json"] }
+serde = { version = "1.0", features = ["derive"] }
+log = "0.4"
+fern = "0.5"
+uuid = { version = "1.1.2", features = ["v4", "fast-rng"] }
+bimap = "0.6.2"
+regex = "1.6.0"
+lazy_static = "1.4.0"
+bitmask-enum = "2.0.0"
+readonly = "0.2.1"
+rand = "0.6.5"
+async-trait = "0.1.56"

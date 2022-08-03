@@ -1,7 +1,7 @@
 __pycache__
-/host/target
+/checkmate/target
 *.log
 *.json
 /prototyping/training
-/client/node_modules
+/checkmate-frontend/node_modules
 /stockfish*
